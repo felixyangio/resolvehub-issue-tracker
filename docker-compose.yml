@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: resolvehub-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: resolvehub
+      POSTGRES_USER: resolvehub
+      POSTGRES_PASSWORD: resolvehub
+    volumes:
+      - resolvehub-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resolvehub"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: resolvehub-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/resolvehub
+      SPRING_DATASOURCE_USERNAME: resolvehub
+      SPRING_DATASOURCE_PASSWORD: resolvehub
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: Y2hhbmdlLXRoaXMtaW4tcHJvZHVjdGlvbi10by1hLXNlY3VyZS1yYW5kb20ta2V5LTI1Ng==
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  resolvehub-data:

@@ -1,0 +1,24 @@
+# ---- build stage ----
+FROM eclipse-temurin:17-jdk-jammy AS build
+
+WORKDIR /app
+
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml ./
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+
+COPY src/ src/
+RUN ./mvnw package -DskipTests -B
+
+# ---- runtime stage ----
+FROM eclipse-temurin:17-jre-jammy
+
+RUN groupadd -r app && useradd -r -g app app
+USER app
+
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
