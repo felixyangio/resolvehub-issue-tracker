@@ -88,7 +88,7 @@ Entity (JPA domain model)
 |--------|----------|-------------|
 | POST | `/api/auth/register` | Register a new user |
 | POST | `/api/auth/login` | Login, receive JWT token |
-| GET | `/api/auth/me` | Get current user profile |
+| GET | `/api/users/me` | Get current user profile |
 
 ### Incidents
 | Method | Endpoint | Description |
@@ -175,24 +175,74 @@ docker compose up -d postgres
 The API is available at `http://localhost:8080`.
 Swagger UI is at `http://localhost:8080/swagger-ui.html`.
 
-### Quick test workflow
+### Demo flow
+
+This walks through the full incident lifecycle. Start the stack with `docker compose up -d` first.
 
 ```bash
-# Register
-TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Alice","email":"alice@test.com","password":"Password1!"}' \
-  | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+API="http://localhost:8080/api"
 
-# Create incident (priority auto-classified)
-curl -s -X POST http://localhost:8080/api/incidents \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Production outage","description":"API cluster down","category":"TECHNICAL"}'
+# 1. Register three users
+curl -s -X POST $API/auth/register -H "Content-Type: application/json" \
+  -d '{"name":"Carol Manager","email":"carol@demo.io","password":"Manage1!"}'
 
-# View dashboard
-curl -s http://localhost:8080/api/dashboard/summary \
-  -H "Authorization: Bearer $TOKEN"
+curl -s -X POST $API/auth/register -H "Content-Type: application/json" \
+  -d '{"name":"Bob Agent","email":"bob@demo.io","password":"Agent123!"}'
+
+curl -s -X POST $API/auth/register -H "Content-Type: application/json" \
+  -d '{"name":"Alice User","email":"alice@demo.io","password":"User1234!"}'
+
+# 2. Promote roles via database (no admin UI yet)
+docker exec resolvehub-db psql -U resolvehub -c \
+  "UPDATE users SET role='MANAGER' WHERE email='carol@demo.io';"
+docker exec resolvehub-db psql -U resolvehub -c \
+  "UPDATE users SET role='AGENT' WHERE email='bob@demo.io';"
+
+# 3. Login as each role (tokens include updated roles)
+MANAGER=$(curl -s -X POST $API/auth/login -H "Content-Type: application/json" \
+  -d '{"email":"carol@demo.io","password":"Manage1!"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+
+AGENT=$(curl -s -X POST $API/auth/login -H "Content-Type: application/json" \
+  -d '{"email":"bob@demo.io","password":"Agent123!"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+
+USER=$(curl -s -X POST $API/auth/login -H "Content-Type: application/json" \
+  -d '{"email":"alice@demo.io","password":"User1234!"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+
+# 4. Create incident as user (priority auto-classified as CRITICAL)
+curl -s -X POST $API/incidents -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $USER" \
+  -d '{"title":"Production API outage","description":"All endpoints returning 503","category":"TECHNICAL"}'
+
+# 5. Manager assigns to agent (status auto-transitions to ASSIGNED)
+# Replace <incident-id> and <agent-id> with actual UUIDs from responses above
+curl -s -X PATCH $API/incidents/<incident-id>/assign \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $MANAGER" \
+  -d '{"agentId":"<agent-id>"}'
+
+# 6. Agent progresses through statuses
+curl -s -X PATCH $API/incidents/<incident-id>/status \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $AGENT" \
+  -d '{"status":"IN_PROGRESS"}'
+
+# 7. Agent adds comment
+curl -s -X POST $API/incidents/<incident-id>/comments \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $AGENT" \
+  -d '{"content":"Root cause identified: database connection pool exhausted."}'
+
+# 8. Agent resolves, manager closes
+curl -s -X PATCH $API/incidents/<incident-id>/status \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $AGENT" \
+  -d '{"status":"RESOLVED"}'
+
+curl -s -X PATCH $API/incidents/<incident-id>/status \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $MANAGER" \
+  -d '{"status":"CLOSED"}'
+
+# 9. Review audit trail
+curl -s $API/incidents/<incident-id>/audit-logs -H "Authorization: Bearer $MANAGER"
+
+# 10. Check dashboard
+curl -s $API/dashboard/summary -H "Authorization: Bearer $MANAGER"
 ```
 
 ## Running Tests
@@ -234,7 +284,19 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 ## Screenshots
 
-> Screenshots to be added after frontend implementation.
+This is a backend API project. The screenshots below show the API in use via Swagger UI and curl.
+
+> To add screenshots: save images to a `docs/screenshots/` folder and update the paths below.
+
+- [ ] **Swagger UI** — `http://localhost:8080/swagger-ui.html` showing all endpoint groups
+- [ ] **POST /auth/register** — registration request and JWT response
+- [ ] **POST /incidents** — creating an incident with auto-classified priority
+- [ ] **PATCH /incidents/{id}/assign** — manager assigning to agent
+- [ ] **PATCH /incidents/{id}/status** — status transition (ASSIGNED to IN_PROGRESS)
+- [ ] **GET /incidents/{id}/audit-logs** — full audit trail for an incident
+- [ ] **GET /dashboard/summary** — dashboard statistics response
+- [ ] **Terminal** — `./mvnw test` showing 101 tests passing
+- [ ] **Terminal** — `docker compose up` showing healthy startup
 
 ## Future Improvements
 
@@ -301,3 +363,4 @@ Java 17, Spring Boot 3, Spring Security, JWT, Spring Data JPA, PostgreSQL, Hiber
 - [x] Phase 7: Unit and integration tests (101 tests)
 - [x] Phase 9: Docker multi-stage build and GitHub Actions CI
 - [x] Phase 10: Documentation and project polish
+- [x] Phase 11: Final verification, cleanup, and demo evidence
