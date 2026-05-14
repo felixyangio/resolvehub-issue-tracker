@@ -81,7 +81,7 @@ class CommentServiceTest {
         incident.setId(UUID.randomUUID());
         incident.setTitle("Test incident");
         incident.setDescription("Test");
-        incident.setCategory(IncidentCategory.TECHNICAL);
+        incident.setCategory(IncidentCategory.MAINTENANCE);
         incident.setPriority(Priority.MEDIUM);
         incident.setStatus(IncidentStatus.NEW);
         incident.setCreatedBy(userAlice);

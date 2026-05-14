@@ -1,10 +1,14 @@
 package com.resolvehub.service;
 
 import com.resolvehub.dto.response.AgentWorkloadResponse;
+import com.resolvehub.dto.response.CategoryCountResponse;
 import com.resolvehub.dto.response.DashboardSummaryResponse;
+import com.resolvehub.dto.response.IncidentResponse;
 import com.resolvehub.dto.response.PriorityCountResponse;
 import com.resolvehub.dto.response.StatusCountResponse;
+import com.resolvehub.dto.response.WeeklyTrendResponse;
 import com.resolvehub.dto.response.WorkloadResponse;
+import com.resolvehub.enums.IncidentCategory;
 import com.resolvehub.enums.IncidentStatus;
 import com.resolvehub.enums.Priority;
 import com.resolvehub.enums.Role;
@@ -14,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -58,6 +65,58 @@ public class DashboardService {
                         priority.name(),
                         countByPriority(role, userDetails.getId(), priority)))
                 .toList();
+    }
+
+    public List<CategoryCountResponse> getIncidentsByCategory(CustomUserDetails userDetails) {
+        Role role = Role.valueOf(userDetails.getRole());
+
+        return Arrays.stream(IncidentCategory.values())
+                .map(cat -> {
+                    long count;
+                    if (role == Role.MANAGER || role == Role.ADMIN) {
+                        count = incidentRepository.countByCategory(cat);
+                    } else if (role == Role.AGENT) {
+                        count = incidentRepository.countByCategoryAndAssignedToId(cat, userDetails.getId());
+                    } else {
+                        count = incidentRepository.countByCategoryAndCreatedById(cat, userDetails.getId());
+                    }
+                    return new CategoryCountResponse(cat.name(), count);
+                })
+                .toList();
+    }
+
+    public List<IncidentResponse> getRecentActivity(CustomUserDetails userDetails) {
+        Role role = Role.valueOf(userDetails.getRole());
+
+        if (role == Role.MANAGER || role == Role.ADMIN) {
+            return incidentRepository.findTop10ByOrderByUpdatedAtDesc().stream()
+                    .map(IncidentResponse::fromEntity)
+                    .toList();
+        } else if (role == Role.AGENT) {
+            return incidentRepository.findTop10ByAssignedToIdOrderByUpdatedAtDesc(userDetails.getId()).stream()
+                    .map(IncidentResponse::fromEntity)
+                    .toList();
+        } else {
+            return incidentRepository.findTop10ByCreatedByIdOrderByUpdatedAtDesc(userDetails.getId()).stream()
+                    .map(IncidentResponse::fromEntity)
+                    .toList();
+        }
+    }
+
+    public List<WeeklyTrendResponse> getWeeklyTrend() {
+        List<WeeklyTrendResponse> trend = new ArrayList<>();
+        LocalDateTime now = LocalDate.now().atStartOfDay();
+        DateTimeFormatter dayFormat = DateTimeFormatter.ofPattern("EEE");
+
+        for (int i = 6; i >= 0; i--) {
+            LocalDateTime dayStart = now.minusDays(i);
+            LocalDateTime dayEnd = dayStart.plusDays(1);
+            String dayName = dayStart.format(dayFormat);
+            long created = incidentRepository.countCreatedBetween(dayStart, dayEnd);
+            long resolved = incidentRepository.countResolvedBetween(dayStart, dayEnd);
+            trend.add(new WeeklyTrendResponse(dayName, created, resolved));
+        }
+        return trend;
     }
 
     public WorkloadResponse getWorkload(CustomUserDetails userDetails) {

@@ -59,6 +59,9 @@ class IncidentServiceTest {
     @Mock
     private IncidentClassificationService classificationService;
 
+    @Mock
+    private CategoryClassificationService categoryClassificationService;
+
     @InjectMocks
     private IncidentService incidentService;
 
@@ -102,7 +105,7 @@ class IncidentServiceTest {
         incident.setId(UUID.randomUUID());
         incident.setTitle("Test incident");
         incident.setDescription("Test description");
-        incident.setCategory(IncidentCategory.TECHNICAL);
+        incident.setCategory(IncidentCategory.MAINTENANCE);
         incident.setPriority(Priority.MEDIUM);
         incident.setStatus(status);
         incident.setCreatedBy(creator);
@@ -130,7 +133,7 @@ class IncidentServiceTest {
             CreateIncidentRequest request = new CreateIncidentRequest();
             request.setTitle("Server down");
             request.setDescription("API not responding");
-            request.setCategory(IncidentCategory.TECHNICAL);
+            request.setCategory(IncidentCategory.MAINTENANCE);
 
             IncidentResponse response = incidentService.create(request, aliceDetails);
 
@@ -420,7 +423,7 @@ class IncidentServiceTest {
             CreateIncidentRequest request = new CreateIncidentRequest();
             request.setTitle("Test");
             request.setDescription("Desc");
-            request.setCategory(IncidentCategory.TECHNICAL);
+            request.setCategory(IncidentCategory.MAINTENANCE);
 
             incidentService.create(request, aliceDetails);
 

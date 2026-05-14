@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
 @Builder
 public class Incident extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 200)
     private String title;
 
     @Column(nullable = false, columnDefinition = "TEXT")

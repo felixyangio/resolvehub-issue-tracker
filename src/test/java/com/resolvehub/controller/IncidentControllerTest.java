@@ -83,7 +83,7 @@ class IncidentControllerTest {
                 .id(UUID.randomUUID())
                 .title("Server down")
                 .description("API not responding")
-                .category("TECHNICAL")
+                .category("MAINTENANCE")
                 .priority("HIGH")
                 .status("NEW")
                 .createdById(aliceDetails.getId())
@@ -104,7 +104,7 @@ class IncidentControllerTest {
             CreateIncidentRequest request = new CreateIncidentRequest();
             request.setTitle("Server down");
             request.setDescription("API not responding");
-            request.setCategory(IncidentCategory.TECHNICAL);
+            request.setCategory(IncidentCategory.MAINTENANCE);
 
             mockMvc.perform(post("/api/incidents")
                             .with(user(aliceDetails))
@@ -120,7 +120,7 @@ class IncidentControllerTest {
         void returns400WhenTitleMissing() throws Exception {
             CreateIncidentRequest request = new CreateIncidentRequest();
             request.setDescription("Some description");
-            request.setCategory(IncidentCategory.TECHNICAL);
+            request.setCategory(IncidentCategory.MAINTENANCE);
 
             mockMvc.perform(post("/api/incidents")
                             .with(user(aliceDetails))
@@ -132,18 +132,17 @@ class IncidentControllerTest {
         }
 
         @Test
-        void returns400WhenCategoryMissing() throws Exception {
+        void returns201WhenCategoryOmittedAndAutoDetected() throws Exception {
             CreateIncidentRequest request = new CreateIncidentRequest();
-            request.setTitle("Test");
-            request.setDescription("Desc");
+            request.setTitle("Boiler broken");
+            request.setDescription("No hot water since yesterday");
 
             mockMvc.perform(post("/api/incidents")
                             .with(user(aliceDetails))
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.errors.category").value("Category is required"));
+                    .andExpect(status().isCreated());
         }
 
         @Test
@@ -151,7 +150,7 @@ class IncidentControllerTest {
             CreateIncidentRequest request = new CreateIncidentRequest();
             request.setTitle("Test");
             request.setDescription("Desc");
-            request.setCategory(IncidentCategory.TECHNICAL);
+            request.setCategory(IncidentCategory.MAINTENANCE);
 
             mockMvc.perform(post("/api/incidents")
                             .with(csrf())
@@ -200,7 +199,7 @@ class IncidentControllerTest {
                     .id(incidentId)
                     .title("Server down")
                     .description("Desc")
-                    .category("TECHNICAL")
+                    .category("MAINTENANCE")
                     .priority("HIGH")
                     .status("ASSIGNED")
                     .createdById(UUID.randomUUID())
@@ -251,7 +250,7 @@ class IncidentControllerTest {
                     .id(incidentId)
                     .title("Test")
                     .description("Desc")
-                    .category("TECHNICAL")
+                    .category("MAINTENANCE")
                     .priority("MEDIUM")
                     .status("IN_PROGRESS")
                     .createdById(UUID.randomUUID())

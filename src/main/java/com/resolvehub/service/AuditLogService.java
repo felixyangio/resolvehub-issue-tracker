@@ -21,6 +21,7 @@ public class AuditLogService {
     private final AuditLogRepository auditLogRepository;
     private final IncidentService incidentService;
 
+    @Transactional
     public void log(Incident incident, User actor, AuditAction action,
                     String oldValue, String newValue, String message) {
         AuditLog auditLog = AuditLog.builder()

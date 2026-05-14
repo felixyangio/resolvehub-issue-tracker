@@ -19,9 +19,9 @@ public class CreateIncidentRequest {
     private String title;
 
     @NotBlank(message = "Description is required")
+    @Size(max = 5000, message = "Description must not exceed 5000 characters")
     private String description;
 
-    @NotNull(message = "Category is required")
     private IncidentCategory category;
 
     private Priority priority;

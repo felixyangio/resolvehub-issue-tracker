@@ -1,23 +1,31 @@
 # ResolveHub
 
-**Incident Response & Issue Resolution Platform**
+**Resident Repair & Complaint Operations Platform**
 
-A production-style REST API for managing incidents across an organisation. Users report issues, managers assign them to agents, agents resolve them through a controlled status workflow, and every action is audit-logged. Built with Java 17 and Spring Boot 3 following layered architecture, JWT authentication, and role-based access control.
+A production-style REST API for managing resident cases across accommodation providers. Residents report repair requests and complaints, property managers assign them to maintenance staff, staff resolve them through a controlled status workflow, and every action is logged in a case timeline. Built with Java 17 and Spring Boot 3 following layered architecture, JWT authentication, and role-based access control.
 
-101 automated tests. Dockerised. CI via GitHub Actions.
+110 automated tests. Dockerised. CI via GitHub Actions.
+
+---
+
+## Context
+
+ResolveHub is positioned for the accommodation and property management sector — student halls, HMOs, build-to-rent blocks, and housing associations. The domain maps naturally onto incident management: residents raise cases (repairs, complaints, queries), operations staff triage and assign them, maintenance staff resolve them, and managers track performance through dashboards.
+
+> **Implementation note:** The backend uses generic entity names (`Incident`, `Agent`, `Manager`) internally. This is deliberate — the domain layer is sector-agnostic, making it reusable across verticals. The documentation and API responses present these in accommodation terminology. Renaming enum values (e.g. `TECHNICAL` → `MAINTENANCE`) is listed as a future domain adaptation task.
 
 ---
 
 ## Core Features
 
-- **Incident lifecycle management** — create, assign, transition through statuses, resolve, close
-- **Role-based access control** — four roles (User, Agent, Manager, Admin) with enforced permissions at the service layer
+- **Resident case lifecycle** — create repair requests or complaints, assign to staff, transition through statuses, resolve, close
+- **Role-based access control** — four roles (Resident, Maintenance Staff, Property Manager, Admin) with enforced permissions at the service layer
 - **Status transition validation** — state machine prevents invalid moves (e.g. NEW cannot jump to CLOSED)
-- **Rule-based priority classification** — keyword matching auto-assigns priority when not provided
-- **Incident comments** — threaded discussion per incident with access control
-- **Immutable audit logs** — every create, assign, status change, and comment is recorded
-- **Dashboard APIs** — role-filtered statistics: counts by status, priority, agent workload
-- **Dynamic filtering** — JPA Specifications for status, category, priority with pagination
+- **Rule-based urgency classification** — keyword matching auto-assigns urgency when not provided (e.g. "water leak" → CRITICAL, "lightbulb" → LOW)
+- **Case comments** — threaded discussion per case with access control
+- **Immutable case timeline** — every create, assign, status change, and comment is recorded as an audit trail
+- **Operations dashboard APIs** — role-filtered statistics: counts by status, urgency, staff workload
+- **Dynamic filtering** — JPA Specifications for status, category, urgency with pagination
 - **JWT authentication** — stateless, HMAC-SHA signed tokens with configurable expiry
 - **Input validation** — Hibernate Validator on all request DTOs
 - **Consistent error handling** — `@RestControllerAdvice` with structured error responses
@@ -44,7 +52,7 @@ A production-style REST API for managing incidents across an organisation. Users
 ```
 Controller (HTTP routing, validation)
     │
-Service (business logic, permissions, audit logging)
+Service (business logic, permissions, case timeline logging)
     │
 Repository (JPA queries, Specifications)
     │
@@ -60,14 +68,14 @@ Entity (JPA domain model)
 
 ## User Roles
 
-| Role | Permissions |
-|------|------------|
-| **USER** | Create incidents, view/update own incidents, add comments on own incidents |
-| **AGENT** | View/update assigned incidents, change status, add comments |
-| **MANAGER** | View all incidents, assign to agents, change any status, delete incidents |
-| **ADMIN** | All manager permissions |
+| Role | In-App Name | Permissions |
+|------|-------------|------------|
+| **USER** | Resident | Create cases, view/update own cases, add comments on own cases |
+| **AGENT** | Maintenance Staff | View/update assigned cases, change status, add comments |
+| **MANAGER** | Property Manager | View all cases, assign to staff, change any status, delete cases |
+| **ADMIN** | Admin | All property manager permissions |
 
-## Incident Workflow
+## Case Workflow
 
 ```
   NEW ──→ ASSIGNED ──→ IN_PROGRESS ──→ RESOLVED ──→ CLOSED
@@ -77,53 +85,68 @@ Entity (JPA domain model)
     CANCELLED
 ```
 
-- Assigning an incident in NEW status auto-transitions to ASSIGNED
+- Assigning a case in NEW status auto-transitions to ASSIGNED
 - Only valid transitions are allowed (enforced by `StatusTransitionValidator`)
-- Each transition generates an audit log entry
+- Each transition generates a case timeline entry
+
+## Urgency Classification
+
+When a resident submits a case without specifying urgency, the system auto-classifies based on keywords:
+
+| Urgency | Example Keywords | Accommodation Example |
+|---------|-----------------|----------------------|
+| CRITICAL | outage, system down, data leak, breach, production down | Water leak flooding hallway, gas smell, no heating in winter |
+| HIGH | security, unauthorized, failure | Broken front door lock, boiler failure, electrical fault |
+| MEDIUM | *(default)* | Washing machine not draining, Wi-Fi intermittent |
+| LOW | information, question, how to | Lightbulb replacement, bin collection query |
+
+> **Domain-adapted keywords:** The classification service uses accommodation-specific keywords — "flood", "gas leak", "no heating" → CRITICAL; "mould", "broken lock", "boiler" → HIGH; "lightbulb", "minor" → LOW. The service uses the Strategy pattern, so swapping for an ML-backed implementation requires no caller changes.
 
 ## API Overview
 
 ### Authentication
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/register` | Register a new resident |
 | POST | `/api/auth/login` | Login, receive JWT token |
 | GET | `/api/users/me` | Get current user profile |
 
-### Incidents
+### Resident Cases
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/incidents` | Create incident (auto-classifies priority if omitted) |
-| GET | `/api/incidents` | List incidents (filtered by role, paginated) |
-| GET | `/api/incidents/{id}` | Get incident detail |
-| PUT | `/api/incidents/{id}` | Update incident fields |
-| PATCH | `/api/incidents/{id}/assign` | Assign to agent (Manager/Admin only) |
+| POST | `/api/incidents` | Create case (auto-classifies urgency if omitted) |
+| GET | `/api/incidents` | List cases (filtered by role, paginated) |
+| GET | `/api/incidents/{id}` | Get case detail |
+| PUT | `/api/incidents/{id}` | Update case fields |
+| PATCH | `/api/incidents/{id}/assign` | Assign to maintenance staff (Property Manager only) |
 | PATCH | `/api/incidents/{id}/status` | Change status (validated transitions) |
-| DELETE | `/api/incidents/{id}` | Delete incident (Manager/Admin only) |
+| DELETE | `/api/incidents/{id}` | Delete case (Property Manager only) |
 
-### Comments
+### Case Comments
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/incidents/{id}/comments` | Add comment |
-| GET | `/api/incidents/{id}/comments` | List comments |
+| POST | `/api/incidents/{id}/comments` | Add comment to case |
+| GET | `/api/incidents/{id}/comments` | List case comments |
 
-### Audit Logs
+### Case Timeline
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/incidents/{id}/audit-logs` | View audit trail |
+| GET | `/api/incidents/{id}/audit-logs` | View full case timeline |
 
-### Dashboard
+### Operations Dashboard
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/dashboard/summary` | Role-filtered summary counts |
 | GET | `/api/dashboard/incidents-by-status` | Count per status |
-| GET | `/api/dashboard/incidents-by-severity` | Count per priority |
-| GET | `/api/dashboard/my-workload` | Personal workload + agent breakdown |
+| GET | `/api/dashboard/incidents-by-severity` | Count per urgency level |
+| GET | `/api/dashboard/my-workload` | Personal workload + staff breakdown |
 
 ### Utility
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/health` | Health check |
+
+> **Note:** API paths use the internal entity name (`incidents`, `audit-logs`). A future version could alias these to `/cases` and `/timeline` for domain consistency.
 
 ## Domain Model
 
@@ -136,9 +159,11 @@ User ──────────────── Incident ─────�
                     (actor)
 ```
 
-**Entities:** User, Incident, Comment, AuditLog
+**Entities:** User, Incident (resident case), Comment, AuditLog (case timeline entry)
 
-**Enums:** Role (4), IncidentStatus (6), Priority (4), IncidentCategory (5), AuditAction (5)
+**Enums:** Role (4), IncidentStatus (6), Priority (4 urgency levels), IncidentCategory (9), AuditAction (5)
+
+> **Domain-adapted categories:** `IncidentCategory` uses accommodation-specific values: `MAINTENANCE`, `SAFETY`, `NOISE`, `INTERNET`, `BILLING`, `DEPOSIT`, `CLEANING`, `ACCESS`, `OTHER`. The SAFETY category auto-classifies as HIGH urgency regardless of keywords.
 
 ## Running Locally
 
@@ -177,78 +202,119 @@ Swagger UI is at `http://localhost:8080/swagger-ui.html`.
 
 ### Demo flow
 
-This walks through the full incident lifecycle. Start the stack with `docker compose up -d` first.
+This walks through a resident reporting a heating fault, a property manager assigning it, and maintenance staff resolving it. Start the stack with `docker compose up -d` first.
 
 ```bash
 API="http://localhost:8080/api"
 
 # 1. Register three users
 curl -s -X POST $API/auth/register -H "Content-Type: application/json" \
-  -d '{"name":"Carol Manager","email":"carol@demo.io","password":"Manage1!"}'
+  -d '{"name":"Carol Perry","email":"carol@property.io","password":"Manage1!"}'
 
 curl -s -X POST $API/auth/register -H "Content-Type: application/json" \
-  -d '{"name":"Bob Agent","email":"bob@demo.io","password":"Agent123!"}'
+  -d '{"name":"Bob Torres","email":"bob@property.io","password":"Agent123!"}'
 
 curl -s -X POST $API/auth/register -H "Content-Type: application/json" \
-  -d '{"name":"Alice User","email":"alice@demo.io","password":"User1234!"}'
+  -d '{"name":"Alice Chen","email":"alice@tenant.io","password":"User1234!"}'
 
 # 2. Promote roles via database (no admin UI yet)
 docker exec resolvehub-db psql -U resolvehub -c \
-  "UPDATE users SET role='MANAGER' WHERE email='carol@demo.io';"
+  "UPDATE users SET role='MANAGER' WHERE email='carol@property.io';"
 docker exec resolvehub-db psql -U resolvehub -c \
-  "UPDATE users SET role='AGENT' WHERE email='bob@demo.io';"
+  "UPDATE users SET role='AGENT' WHERE email='bob@property.io';"
 
-# 3. Login as each role (tokens include updated roles)
+# 3. Login as each role
 MANAGER=$(curl -s -X POST $API/auth/login -H "Content-Type: application/json" \
-  -d '{"email":"carol@demo.io","password":"Manage1!"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+  -d '{"email":"carol@property.io","password":"Manage1!"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
 
-AGENT=$(curl -s -X POST $API/auth/login -H "Content-Type: application/json" \
-  -d '{"email":"bob@demo.io","password":"Agent123!"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+STAFF=$(curl -s -X POST $API/auth/login -H "Content-Type: application/json" \
+  -d '{"email":"bob@property.io","password":"Agent123!"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
 
-USER=$(curl -s -X POST $API/auth/login -H "Content-Type: application/json" \
-  -d '{"email":"alice@demo.io","password":"User1234!"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+RESIDENT=$(curl -s -X POST $API/auth/login -H "Content-Type: application/json" \
+  -d '{"email":"alice@tenant.io","password":"User1234!"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
 
-# 4. Create incident as user (priority auto-classified as CRITICAL)
+# 4. Resident reports a repair (urgency auto-classified as HIGH via keyword "not working")
 curl -s -X POST $API/incidents -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $USER" \
-  -d '{"title":"Production API outage","description":"All endpoints returning 503","category":"TECHNICAL"}'
+  -H "Authorization: Bearer $RESIDENT" \
+  -d '{"title":"Heating not working in Flat B204","description":"Radiators are cold in all rooms. Thermostat shows no response. Temperature dropping.","category":"TECHNICAL"}'
 
-# 5. Manager assigns to agent (status auto-transitions to ASSIGNED)
-# Replace <incident-id> and <agent-id> with actual UUIDs from responses above
-curl -s -X PATCH $API/incidents/<incident-id>/assign \
+# 5. Property manager assigns to maintenance staff (status auto-transitions to ASSIGNED)
+# Replace <case-id> and <staff-id> with actual UUIDs from responses above
+curl -s -X PATCH $API/incidents/<case-id>/assign \
   -H "Content-Type: application/json" -H "Authorization: Bearer $MANAGER" \
-  -d '{"agentId":"<agent-id>"}'
+  -d '{"agentId":"<staff-id>"}'
 
-# 6. Agent progresses through statuses
-curl -s -X PATCH $API/incidents/<incident-id>/status \
-  -H "Content-Type: application/json" -H "Authorization: Bearer $AGENT" \
+# 6. Maintenance staff starts work
+curl -s -X PATCH $API/incidents/<case-id>/status \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $STAFF" \
   -d '{"status":"IN_PROGRESS"}'
 
-# 7. Agent adds comment
-curl -s -X POST $API/incidents/<incident-id>/comments \
-  -H "Content-Type: application/json" -H "Authorization: Bearer $AGENT" \
-  -d '{"content":"Root cause identified: database connection pool exhausted."}'
+# 7. Staff adds update comment
+curl -s -X POST $API/incidents/<case-id>/comments \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $STAFF" \
+  -d '{"content":"Inspected boiler — pressure valve failed. Replacement part ordered, ETA tomorrow."}'
 
-# 8. Agent resolves, manager closes
-curl -s -X PATCH $API/incidents/<incident-id>/status \
-  -H "Content-Type: application/json" -H "Authorization: Bearer $AGENT" \
+# 8. Staff resolves, property manager closes
+curl -s -X PATCH $API/incidents/<case-id>/status \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $STAFF" \
   -d '{"status":"RESOLVED"}'
 
-curl -s -X PATCH $API/incidents/<incident-id>/status \
+curl -s -X PATCH $API/incidents/<case-id>/status \
   -H "Content-Type: application/json" -H "Authorization: Bearer $MANAGER" \
   -d '{"status":"CLOSED"}'
 
-# 9. Review audit trail
-curl -s $API/incidents/<incident-id>/audit-logs -H "Authorization: Bearer $MANAGER"
+# 9. Review case timeline
+curl -s $API/incidents/<case-id>/audit-logs -H "Authorization: Bearer $MANAGER"
 
-# 10. Check dashboard
+# 10. Check operations dashboard
 curl -s $API/dashboard/summary -H "Authorization: Bearer $MANAGER"
+```
+
+### More example cases
+
+These show the range of cases the platform handles:
+
+```bash
+# Water leak — auto-classified CRITICAL (keyword: "leak")
+curl -s -X POST $API/incidents -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $RESIDENT" \
+  -d '{"title":"Water leak under bathroom sink","description":"Constant dripping from pipe joint under sink. Water pooling on floor.","category":"TECHNICAL"}'
+
+# Broken lock — auto-classified HIGH (keyword: "security")
+curl -s -X POST $API/incidents -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $RESIDENT" \
+  -d '{"title":"Broken front door lock","description":"Key turns but deadbolt does not engage. Door cannot be locked securely.","category":"SECURITY"}'
+
+# Noise complaint
+curl -s -X POST $API/incidents -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $RESIDENT" \
+  -d '{"title":"Noise complaint after midnight","description":"Loud music from Flat C305 between 1am and 3am, three nights running.","category":"GENERAL"}'
+
+# Wi-Fi issue
+curl -s -X POST $API/incidents -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $RESIDENT" \
+  -d '{"title":"Wi-Fi unavailable in Room C312","description":"No wireless signal detected. Router light is off. Other rooms on same floor also affected.","category":"TECHNICAL"}'
+
+# Deposit dispute
+curl -s -X POST $API/incidents -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $RESIDENT" \
+  -d '{"title":"Deposit deduction dispute","description":"Charged £150 for carpet cleaning but carpet was professionally cleaned before checkout. Have receipt.","category":"BILLING"}'
+
+# Mould issue
+curl -s -X POST $API/incidents -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $RESIDENT" \
+  -d '{"title":"Mould appearing near bedroom window","description":"Black mould patches spreading on wall beside window frame. Getting worse each week.","category":"TECHNICAL"}'
+
+# Shared facility
+curl -s -X POST $API/incidents -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $RESIDENT" \
+  -d '{"title":"Washing machine broken in shared laundry room","description":"Machine stops mid-cycle with error code E3. Clothes stuck inside.","category":"TECHNICAL"}'
 ```
 
 ## Running Tests
 
 ```bash
-# All 101 tests
+# All 110 tests
 ./mvnw test
 
 # Unit tests only (service layer)
@@ -263,15 +329,15 @@ curl -s $API/dashboard/summary -H "Authorization: Bearer $MANAGER"
 | Test class | Count | What it covers |
 |-----------|-------|---------------|
 | StatusTransitionValidatorTest | 21 | All valid/invalid state transitions (parameterized) |
-| IncidentServiceTest | 26 | CRUD, read/write access per role, assignment, audit logging |
-| IncidentClassificationServiceTest | 17 | Keyword priority tiers, precedence, case insensitivity |
-| DashboardServiceTest | 8 | Role-filtered summary, status/priority counts, workload |
-| CommentServiceTest | 7 | Owner/agent/manager access, unauthorized rejection, audit |
+| IncidentServiceTest | 26 | CRUD, read/write access per role, assignment, case timeline logging |
+| IncidentClassificationServiceTest | 26 | Keyword urgency tiers, category overrides, precedence, domain categories |
+| DashboardServiceTest | 8 | Role-filtered summary, status/urgency counts, workload |
+| CommentServiceTest | 7 | Owner/staff/manager access, unauthorized rejection, timeline |
 | AuditLogServiceTest | 4 | Log creation, value tracking, access control |
 | IncidentControllerTest | 9 | HTTP status codes, validation errors, auth, JSON structure |
 | CommentControllerTest | 4 | Create, blank rejection, list, access denied |
 | DashboardControllerTest | 5 | All endpoints, auth check |
-| **Total** | **101** | |
+| **Total** | **110** | |
 
 ## CI/CD
 
@@ -289,26 +355,25 @@ This is a backend API project. The screenshots below show the API in use via Swa
 > To add screenshots: save images to a `docs/screenshots/` folder and update the paths below.
 
 - [ ] **Swagger UI** — `http://localhost:8080/swagger-ui.html` showing all endpoint groups
-- [ ] **POST /auth/register** — registration request and JWT response
-- [ ] **POST /incidents** — creating an incident with auto-classified priority
-- [ ] **PATCH /incidents/{id}/assign** — manager assigning to agent
+- [ ] **POST /auth/register** — resident registration request and JWT response
+- [ ] **POST /incidents** — resident creating a repair request with auto-classified urgency
+- [ ] **PATCH /incidents/{id}/assign** — property manager assigning to maintenance staff
 - [ ] **PATCH /incidents/{id}/status** — status transition (ASSIGNED to IN_PROGRESS)
-- [ ] **GET /incidents/{id}/audit-logs** — full audit trail for an incident
-- [ ] **GET /dashboard/summary** — dashboard statistics response
-- [ ] **Terminal** — `./mvnw test` showing 101 tests passing
+- [ ] **GET /incidents/{id}/audit-logs** — full case timeline for a repair request
+- [ ] **GET /dashboard/summary** — operations dashboard statistics response
+- [ ] **Terminal** — `./mvnw test` showing 110 tests passing
 - [ ] **Terminal** — `docker compose up` showing healthy startup
 
 ## Future Improvements
 
-- Frontend dashboard (React or Thymeleaf)
-- Email/Slack notifications on assignment and status change
-- SLA tracking with overdue alerts
-- File attachments on incidents
-- Full-text search with Elasticsearch
-- Pagination metadata in dashboard responses
-- Rate limiting on public endpoints
-- Integration tests with Testcontainers
-- Deployment to a cloud platform (AWS/Render/Fly.io)
+- **Resident portal** — React frontend for residents to submit and track cases
+- **Email/SMS notifications** — Spring Events + async listeners for assignment and status change
+- **SLA tracking** — scheduled task to flag overdue cases based on urgency thresholds (e.g. CRITICAL repairs within 4 hours)
+- **File attachments** — S3-backed photo upload on cases (residents photograph the issue)
+- **Richer property data model** — tenant-to-property mapping, building/floor/unit hierarchy for portfolio managers
+- **Testcontainers** — repository-level tests against a real PostgreSQL to catch Hibernate query bugs
+- **Full-text search** — Elasticsearch for searching across case titles and descriptions
+- **Production deployment** — Fly.io or AWS ECS with environment-specific config profiles
 
 ---
 
@@ -316,14 +381,14 @@ This is a backend API project. The screenshots below show the API in use via Swa
 
 ### One paragraph
 
-> Built a production-style incident management REST API with Java 17 and Spring Boot 3. Implemented JWT authentication, role-based access control for four user roles, a validated status transition workflow, rule-based priority classification, audit logging, and dashboard statistics APIs. Wrote 101 automated tests (unit + integration with MockMvc). Containerised with a multi-stage Docker build and automated CI with GitHub Actions.
+> Built a production-style resident case management REST API for accommodation providers with Java 17 and Spring Boot 3. Implemented JWT authentication, role-based access control for four user roles (Resident, Maintenance Staff, Property Manager, Admin), a validated status transition workflow, rule-based urgency classification, case timeline logging, and operations dashboard APIs. Wrote 110 automated tests (unit + integration with MockMvc). Containerised with a multi-stage Docker build and automated CI with GitHub Actions.
 
 ### Bullet points (for CV)
 
-- Designed and built a RESTful incident management API with Java 17, Spring Boot 3, Spring Security, and PostgreSQL
-- Implemented stateless JWT authentication and role-based access control (User, Agent, Manager, Admin) enforced at the service layer
-- Built validated status transition workflow, rule-based incident classification, audit logging, and role-filtered dashboard APIs
-- Wrote 101 automated tests across unit (Mockito) and integration (MockMvc) layers covering permissions, workflows, and validation
+- Designed and built a RESTful case management API for property operations with Java 17, Spring Boot 3, Spring Security, and PostgreSQL
+- Implemented stateless JWT authentication and role-based access control (Resident, Staff, Manager, Admin) enforced at the service layer
+- Built validated status transition workflow, rule-based urgency classification, case timeline logging, and role-filtered operations dashboard APIs
+- Wrote 110 automated tests across unit (Mockito) and integration (MockMvc) layers covering permissions, workflows, classification, and validation
 - Containerised with Docker multi-stage build and set up GitHub Actions CI pipeline with PostgreSQL service containers
 
 ### Technical keywords
@@ -338,7 +403,7 @@ Java 17, Spring Boot 3, Spring Security, JWT, Spring Data JPA, PostgreSQL, Hiber
 
 **JWT authentication** — Building the full flow (registration, login, token generation, filter-based validation, SecurityContext population) from scratch taught me how stateless auth actually works. The token carries the role claim, so every request is self-contained — no session store needed.
 
-**Role-based access control** — Enforcing permissions at the service layer (not with `@PreAuthorize` annotations) made the rules explicit and testable. Each role has clear boundaries: users see their own data, agents see their assignments, managers see everything.
+**Role-based access control** — Enforcing permissions at the service layer (not with `@PreAuthorize` annotations) made the rules explicit and testable. Each role has clear boundaries: residents see their own cases, maintenance staff see their assignments, property managers see everything.
 
 **Status transition validation** — Modelling allowed transitions as an immutable `Map<Status, Set<Status>>` made the state machine easy to test (21 parameterized tests cover every combination) and impossible to bypass — any code path that changes status goes through the validator.
 
@@ -348,7 +413,7 @@ Java 17, Spring Boot 3, Spring Security, JWT, Spring Data JPA, PostgreSQL, Hiber
 
 **CI pipeline** — GitHub Actions with a PostgreSQL service container means tests run against a real database in CI, not just in-memory mocks. Maven dependency caching keeps build times reasonable.
 
-**Dashboard APIs** — Pushing aggregation to the database (`COUNT` queries) instead of loading entities into memory is the difference between O(1) and O(n) for statistics endpoints. Role-based filtering at the query level means each user sees exactly what they should.
+**Operations dashboard** — Pushing aggregation to the database (`COUNT` queries) instead of loading entities into memory is the difference between O(1) and O(n) for statistics endpoints. Role-based filtering at the query level means each user sees exactly what they should — a property manager sees all cases across the building, while a resident sees only their own.
 
 ---
 
@@ -360,7 +425,10 @@ Java 17, Spring Boot 3, Spring Security, JWT, Spring Data JPA, PostgreSQL, Hiber
 - [x] Phase 4: Role-based access control and assignment workflow
 - [x] Phase 5: Comments and audit logs
 - [x] Phase 6: Dashboard APIs and rule-based classification
-- [x] Phase 7: Unit and integration tests (101 tests)
+- [x] Phase 7: Unit and integration tests (110 tests)
 - [x] Phase 9: Docker multi-stage build and GitHub Actions CI
 - [x] Phase 10: Documentation and project polish
 - [x] Phase 11: Final verification, cleanup, and demo evidence
+- [x] Phase 12A: Domain repositioning (accommodation operations)
+- [x] Phase 13: Domain code adaptation (categories, classification, tests)
+- [x] Phase 14: Final CV, GitHub, and interview presentation pack

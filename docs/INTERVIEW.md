@@ -2,77 +2,156 @@
 
 ## 30-Second Pitch
 
-ResolveHub is an incident management REST API I built with Java 17 and Spring Boot 3. It handles the full incident lifecycle: users report issues, managers assign them to agents, agents work through a validated status workflow, and every action is audit-logged. It has four roles with enforced permissions, auto-classification of priority using keyword matching, and dashboard APIs for real-time statistics. I wrote 101 automated tests, containerised it with Docker, and set up CI with GitHub Actions.
+ResolveHub is a resident case management REST API I built with Java 17 and Spring Boot 3. It's designed for accommodation providers — student halls, HMOs, build-to-rent blocks. Residents report repair requests and complaints, property managers assign them to maintenance staff, staff work through a validated status workflow, and every action is logged in a case timeline. It has four roles with enforced permissions, auto-classification of urgency using keyword matching, and operations dashboard APIs for real-time statistics. I wrote 110 automated tests, containerised it with Docker Compose, and set up CI with GitHub Actions.
 
-## Architecture Explanation
+## 1-Minute Interview Explanation
 
-The project follows a standard layered architecture: controllers handle HTTP routing and validation, services contain all business logic and permission checks, repositories handle database queries, and entities map to PostgreSQL tables via JPA.
+**Why I built it:** I wanted a portfolio project that demonstrates backend engineering skills recruiters actually look for — REST APIs, authentication, access control, testing, Docker, CI — inside a domain that's easy to explain in interviews. Accommodation management is a real problem space I understand as a tenant.
 
-Key decisions:
-- **DTOs everywhere** — entities are never exposed to the API, which decouples the database schema from the API contract
-- **Permissions in the service layer** — not using `@PreAuthorize` annotations because the access rules depend on data (e.g. "is this agent assigned to this incident?"), which annotation-based security can't express cleanly
-- **Package-private visibility** — `checkReadAccess()` and `getIncidentOrThrow()` are package-private so `CommentService` and `AuditLogService` can reuse them without making them public API
+**What problem it solves:** Accommodation providers handle repair requests and complaints by email, WhatsApp, or in person. Nothing is tracked centrally, response times are invisible, and managers can't see staff workload. ResolveHub gives each case a structured lifecycle — reported, assigned, in progress, resolved, closed — with a full audit trail and role-filtered dashboards.
 
-## Key Technical Decisions
+**Main workflow:** A resident submits a case (e.g. "Heating not working in Flat B204"). The system auto-classifies its urgency using keyword matching. A property manager assigns it to maintenance staff. Staff progress through statuses — ASSIGNED → IN_PROGRESS → RESOLVED — leaving comments along the way. The manager closes the case. Every action is recorded in an immutable case timeline.
 
-### Why service-layer permissions instead of @PreAuthorize?
+**Core backend features:** JWT stateless authentication, four-role RBAC enforced at the service layer, a validated status transition state machine, rule-based urgency classification, immutable audit logging, operations dashboard with COUNT queries pushed to PostgreSQL, JPA Specifications for dynamic filtering, and consistent error handling with `@RestControllerAdvice`.
 
-`@PreAuthorize` checks happen before the method body runs, so you can only check roles, not data conditions like "is this the incident's creator?" or "is this agent assigned to this incident?". Putting permission logic in the service layer makes it explicit, testable with Mockito, and flexible enough for complex rules.
+**Technical decisions:** Permissions live in the service layer (not `@PreAuthorize` annotations) because access rules depend on data relationships. Status transitions use an immutable `Map<Status, Set<Status>>` so the state machine is declarative and impossible to bypass. Audit logging injects the repository directly to break a circular dependency. Classification uses the Strategy pattern so it can be swapped for ML without changing callers.
 
-### Why an immutable status transition map?
+**What I learned:** How stateless JWT auth actually works end-to-end. Why service-layer permission checks are more testable than annotation-based security. How to design a state machine that's both declarative and enforced. How two-layer testing (Mockito unit + MockMvc integration) catches different classes of bugs. How Docker multi-stage builds reduce the attack surface of production images.
 
-Modelling transitions as `Map<Status, Set<Status>>` makes the state machine declarative and testable. 21 parameterized tests cover every combination. Any code path that changes status goes through the validator — there's no way to bypass it.
+---
 
-### Why inject AuditLogRepository directly into IncidentService?
+## CV-Ready Project Descriptions
 
-IncidentService needs to write audit logs, but AuditLogService also depends on IncidentService for access checks. Injecting the repository directly breaks the circular dependency without `@Lazy` hacks or Spring events.
+### Short CV version
 
-### Why keyword-based classification instead of ML?
+> Built a resident case management REST API for accommodation providers with Java 17, Spring Boot 3, Spring Security (JWT), and PostgreSQL. Implemented role-based access control, status workflow validation, rule-based urgency classification, audit logging, and dashboard APIs. 110 automated tests, Docker Compose, GitHub Actions CI.
 
-For a v1, keyword matching is deterministic, testable (17 tests), and easy to explain. It demonstrates the Strategy pattern — the `IncidentClassificationService` can be swapped for an ML-backed implementation without changing any callers.
+### Backend-focused CV version
 
-### Why COUNT queries instead of loading entities?
+> Designed and built a production-style REST API for managing resident repair requests and complaints across accommodation properties. Implemented stateless JWT authentication, four-role RBAC enforced at the service layer, a validated status transition state machine, rule-based keyword classification for case urgency, immutable audit logging, and role-filtered operations dashboard APIs using COUNT queries pushed to PostgreSQL. Wrote 110 automated tests across unit (Mockito) and integration (MockMvc) layers. Containerised with a Docker multi-stage build and automated CI with GitHub Actions.
 
-Dashboard statistics use `countByStatus()`, `countByPriority()`, etc. — all pushed to PostgreSQL. Loading all incidents into memory and counting in Java would be O(n) per request. The database does it in O(1) with index scans.
+### CV Bullet Points (Graduate Software Engineer)
 
-## Testing Strategy
+- Designed and built a RESTful case management API for property operations with Java 17, Spring Boot 3, Spring Security, and PostgreSQL
+- Implemented stateless JWT authentication and four-role RBAC (Resident, Staff, Manager, Admin) enforced at the service layer with 26 permission tests
+- Built a validated status transition state machine, rule-based urgency classification (9 accommodation categories), and immutable case timeline audit logging
+- Created role-filtered operations dashboard APIs using COUNT queries pushed to PostgreSQL for O(1) statistics
+- Wrote 110 automated tests across unit (Mockito) and integration (MockMvc) layers covering permissions, workflows, classification, and validation
+- Containerised with Docker multi-stage build (non-root JRE runtime) and Docker Compose, automated CI with GitHub Actions and PostgreSQL service containers
 
-**Unit tests (83)** — Mockito, no Spring context, sub-millisecond execution. These test business logic in isolation: permission checks, status transitions, classification rules, audit log creation. Each test creates exactly the state it needs and asserts one behaviour.
+### Technical Keywords
 
-**Integration tests (18)** — `@WebMvcTest` with MockMvc. These load a Spring context slice (controller + security filters + validation) and test HTTP concerns: correct status codes, JSON response structure, validation error messages, authentication rejection. Services are mocked.
+Java 17, Spring Boot 3, Spring Security, JWT, Spring Data JPA, PostgreSQL, Hibernate, REST API, RBAC, JPA Specifications, JUnit 5, Mockito, MockMvc, Docker, Docker Compose, GitHub Actions, Maven, OpenAPI/Swagger
 
-**Why two layers?** Unit tests catch logic bugs fast. Integration tests catch wiring bugs (wrong HTTP method, missing `@Valid`, broken JSON serialisation) that unit tests can't see. Together they give confidence without the cost of full-stack integration tests.
+---
 
-**What I'd add in production:** Testcontainers for repository-level tests against a real PostgreSQL, contract tests if a frontend team consumes the API, and load tests on dashboard queries.
+## GitHub Repository Presentation
 
-## Docker / CI Explanation
+### GitHub repo description (one line)
 
-**Dockerfile** — Multi-stage build. Stage 1 uses the full JDK to compile with Maven. Stage 2 copies only the JAR into a JRE-only image and runs as a non-root user. The final image has no compiler, no source code, and a smaller attack surface.
+Resident repair & complaint management REST API — Spring Boot 3, JWT auth, RBAC, status workflow, audit logging, 110 tests, Docker, CI
 
-**docker-compose.yml** — Two services: PostgreSQL with a healthcheck (`pg_isready`), and the backend that waits for PostgreSQL to be healthy before starting. Environment variables override `application.yml` so the same config works locally and in Docker.
+### Suggested GitHub topics
 
-**GitHub Actions** — Two jobs. `test` starts a PostgreSQL service container and runs `./mvnw verify`. `docker` builds the image without pushing. Maven dependencies are cached across runs to keep build times fast.
+`java` `spring-boot` `rest-api` `jwt` `spring-security` `postgresql` `docker` `github-actions` `rbac` `property-management`
 
-## Future Improvements
+### README intro (first paragraph)
 
-1. **Email notifications** — Spring Events + async listeners for assignment and status change
-2. **SLA tracking** — scheduled task to flag overdue incidents based on priority thresholds
-3. **Testcontainers** — repository-level tests against a real database to catch JPA query bugs
-4. **File attachments** — S3-backed file upload on incidents
-5. **Full-text search** — Elasticsearch for searching across incident titles and descriptions
-6. **Frontend** — React dashboard consuming the existing API
-7. **Deployment** — Fly.io or AWS ECS with environment-specific config profiles
+> A production-style REST API for managing resident cases across accommodation providers. Residents report repair requests and complaints, property managers assign them to maintenance staff, staff resolve them through a controlled status workflow, and every action is logged in a case timeline. Built with Java 17 and Spring Boot 3 following layered architecture, JWT authentication, and role-based access control. 110 automated tests. Dockerised. CI via GitHub Actions.
 
-## Common Interview Questions
+---
 
-**"What's the most complex part of this project?"**
-> The permission system. Four roles, each with different visibility rules that depend on the relationship between the user and the incident (creator? assigned agent? manager?). Getting this right required careful test coverage — 26 tests in `IncidentServiceTest` alone.
+## Interview Q&A
 
-**"How would you scale this?"**
-> The API is stateless (JWT, no sessions), so horizontal scaling is straightforward — put multiple instances behind a load balancer. The database is the bottleneck; I'd add read replicas for dashboard queries and connection pooling (HikariCP is already the default). For very high throughput, I'd move audit logging to an async event queue.
+### Why did you build this project?
 
-**"What would you do differently if starting over?"**
-> I'd add Testcontainers from day one — some bugs only appear when Hibernate generates real SQL against a real database. I'd also consider Spring Events for audit logging to decouple the audit concern from the business logic.
+I wanted a portfolio project that demonstrates the backend skills UK graduate roles actually require — REST APIs, authentication, role-based access control, testing, Docker, CI — in a domain that's easy to explain. Property management is a real problem space I understand, and incident management patterns (cases, assignment, status progression, audit trails) map cleanly onto it.
 
-**"Why not use Spring Security's built-in role annotations?"**
-> They work well for simple "only ADMIN can access this endpoint" rules. But our rules are data-dependent: "users can only view incidents they created, agents can only view incidents assigned to them." That requires reading the entity from the database first, which means the check has to happen inside the method, not as a pre-condition annotation.
+### What real-world problem does it solve?
+
+Accommodation providers handle repair requests and complaints informally — by email, WhatsApp, or in person. Nothing is tracked centrally, so response times are invisible, cases get lost, and managers can't see staff workload. ResolveHub provides a structured workflow: every case has a status, an owner, a timeline, and dashboard visibility.
+
+### What is the architecture?
+
+Standard layered architecture. Controllers handle HTTP routing and input validation. Services contain all business logic and permission checks. Repositories handle database queries using JPA Specifications for dynamic filtering. Entities map to PostgreSQL tables via Hibernate. DTOs decouple the database schema from the API contract — entities are never exposed.
+
+### How does JWT authentication work?
+
+When a user logs in with email and password, the server generates an HMAC-SHA256 signed JWT containing the user's ID, email, and role. Every subsequent request includes this token in the `Authorization: Bearer` header. A `JwtAuthenticationFilter` extracts the token, validates the signature and expiry, loads the user from the database, and populates the `SecurityContext`. No session store is needed — every request is self-contained.
+
+### How did you implement RBAC?
+
+Four roles: Resident (USER), Maintenance Staff (AGENT), Property Manager (MANAGER), and Admin. Permissions are enforced at the service layer, not with `@PreAuthorize` annotations, because the access rules depend on data relationships — "is this the resident who raised this case?" or "is this staff member assigned to this case?". This makes the rules explicit and testable with Mockito. 26 tests in `IncidentServiceTest` cover all permission combinations.
+
+### How do status transitions work?
+
+An immutable `Map<Status, Set<Status>>` defines every valid transition (e.g. ASSIGNED → IN_PROGRESS, IN_PROGRESS → RESOLVED). The `StatusTransitionValidator` checks every status change against this map and throws an exception for invalid moves. 21 parameterized tests cover every valid and invalid combination. Assigning a case in NEW status auto-transitions to ASSIGNED.
+
+### How does rule-based classification work?
+
+When a resident submits a case without specifying urgency, the `IncidentClassificationService` scans the title and description for keywords. "Flood", "gas leak", "no heating" → CRITICAL. "Broken lock", "mould", "boiler" → HIGH. "Lightbulb", "minor", "query" → LOW. SAFETY category always returns HIGH regardless of keywords. The service uses the Strategy pattern — it can be swapped for an ML-backed implementation without changing any callers. 26 tests cover all keyword tiers, category overrides, precedence, and case insensitivity.
+
+### How do audit logs / case timeline work?
+
+Every significant action (case created, assigned, status changed, comment added) writes an immutable `AuditLog` entity with the actor, action type, old/new values, and a human-readable message. The audit log entity is append-only — no update or delete operations exist. The `GET /api/incidents/{id}/audit-logs` endpoint returns the full timeline, filtered by the same role-based access rules as the incident itself.
+
+### How did you test permissions and workflows?
+
+Two layers. Unit tests (92) use Mockito with no Spring context — sub-millisecond execution. They test business logic in isolation: each role's read/write/status-update permissions, every valid and invalid status transition, all classification keyword tiers, and audit log creation. Integration tests (18) use `@WebMvcTest` with MockMvc — they load a Spring context slice (controller + security filters + validation) and test HTTP concerns: status codes, JSON structure, validation error messages, authentication rejection. The two layers catch different classes of bugs.
+
+### How does Docker Compose help reviewers?
+
+`docker compose up -d` starts the full stack — PostgreSQL with a healthcheck and the backend — in one command. The Dockerfile is a multi-stage build: stage 1 compiles with the full JDK, stage 2 copies only the JAR into a JRE-only image running as a non-root user. Reviewers can test the API immediately without installing Java, Maven, or PostgreSQL locally.
+
+### What does GitHub Actions CI do?
+
+Two jobs run on every push and pull request. The `test` job starts a PostgreSQL service container, installs JDK 17 with Maven dependency caching, and runs `./mvnw verify` — all 110 tests against a real database. The `docker` job builds the Docker image to verify the Dockerfile is valid. Neither job pushes to a registry — it's a validation pipeline.
+
+### What would you improve next?
+
+1. **React resident portal** — frontend consuming the existing API
+2. **Email/SMS notifications** — Spring Events + async listeners for assignment and status changes
+3. **SLA tracking** — scheduled task to flag overdue cases based on urgency thresholds (CRITICAL within 4 hours)
+4. **Testcontainers** — repository-level tests against a real PostgreSQL to catch Hibernate query bugs
+5. **File attachments** — S3-backed photo upload so residents can photograph the issue
+6. **Multi-property support** — tenant-to-property mapping for portfolio managers
+7. **Production deployment** — Fly.io or AWS ECS with environment-specific config profiles
+
+---
+
+## Screenshot Checklist
+
+These screenshots demonstrate the working API. Save to `docs/screenshots/` and update paths in README.
+
+| # | Screenshot | What to capture |
+|---|-----------|----------------|
+| 1 | **Swagger UI overview** | `http://localhost:8080/swagger-ui.html` — all endpoint groups expanded |
+| 2 | **POST /api/auth/register** | Swagger or curl — resident registration with JWT response |
+| 3 | **POST /api/auth/login** | Swagger or curl — login returning token |
+| 4 | **POST /api/incidents** | Create a repair case ("Heating not working in Flat B204") — show auto-classified urgency |
+| 5 | **Rule-based classification** | Create a case with "water leak" → CRITICAL, then "lightbulb" → LOW — show both responses |
+| 6 | **PATCH /api/incidents/{id}/assign** | Property manager assigning to maintenance staff |
+| 7 | **PATCH /api/incidents/{id}/status** | Status transition ASSIGNED → IN_PROGRESS |
+| 8 | **GET /api/incidents/{id}/audit-logs** | Full case timeline showing create → assign → status change → comment |
+| 9 | **GET /api/dashboard/summary** | Operations dashboard response with counts |
+| 10 | **Terminal: ./mvnw test** | All 110 tests passing — BUILD SUCCESS |
+| 11 | **Terminal: docker compose up** | Both containers healthy — PostgreSQL + backend |
+| 12 | **GitHub Actions** | CI pipeline passing (green checkmark on main) |
+
+---
+
+## Project Status
+
+- [x] Phase 1: Project foundation and architecture
+- [x] Phase 2: Authentication and JWT
+- [x] Phase 3: Incident CRUD
+- [x] Phase 4: Role-based access control and assignment workflow
+- [x] Phase 5: Comments and audit logs
+- [x] Phase 6: Dashboard APIs and rule-based classification
+- [x] Phase 7: Unit and integration tests (101 → 110 tests)
+- [x] Phase 9: Docker multi-stage build and GitHub Actions CI
+- [x] Phase 10: Documentation and project polish
+- [x] Phase 11: Final verification, cleanup, and demo evidence
+- [x] Phase 12A: Domain repositioning (accommodation operations)
+- [x] Phase 13: Domain code adaptation (categories, classification, tests)
+- [x] Phase 14: Final CV, GitHub, and interview presentation pack

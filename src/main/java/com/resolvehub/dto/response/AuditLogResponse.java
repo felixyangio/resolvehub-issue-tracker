@@ -18,6 +18,7 @@ public class AuditLogResponse {
     private final String message;
     private final UUID actorId;
     private final String actorName;
+    private final String actorRole;
     private final LocalDateTime createdAt;
 
     public static AuditLogResponse fromEntity(AuditLog auditLog) {
@@ -29,6 +30,7 @@ public class AuditLogResponse {
                 .message(auditLog.getMessage())
                 .actorId(auditLog.getActor().getId())
                 .actorName(auditLog.getActor().getName())
+                .actorRole(auditLog.getActor().getRole().name())
                 .createdAt(auditLog.getCreatedAt())
                 .build();
     }

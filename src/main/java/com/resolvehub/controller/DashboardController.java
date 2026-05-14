@@ -1,8 +1,11 @@
 package com.resolvehub.controller;
 
+import com.resolvehub.dto.response.CategoryCountResponse;
 import com.resolvehub.dto.response.DashboardSummaryResponse;
+import com.resolvehub.dto.response.IncidentResponse;
 import com.resolvehub.dto.response.PriorityCountResponse;
 import com.resolvehub.dto.response.StatusCountResponse;
+import com.resolvehub.dto.response.WeeklyTrendResponse;
 import com.resolvehub.dto.response.WorkloadResponse;
 import com.resolvehub.security.CustomUserDetails;
 import com.resolvehub.service.DashboardService;
@@ -41,6 +44,27 @@ public class DashboardController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return ResponseEntity.ok(dashboardService.getIncidentsByPriority(userDetails));
+    }
+
+    @GetMapping("/incidents-by-category")
+    public ResponseEntity<List<CategoryCountResponse>> getIncidentsByCategory(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(dashboardService.getIncidentsByCategory(userDetails));
+    }
+
+    @GetMapping("/recent-activity")
+    public ResponseEntity<List<IncidentResponse>> getRecentActivity(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(dashboardService.getRecentActivity(userDetails));
+    }
+
+    @GetMapping("/weekly-trend")
+    public ResponseEntity<List<WeeklyTrendResponse>> getWeeklyTrend(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(dashboardService.getWeeklyTrend());
     }
 
     @GetMapping("/my-workload")

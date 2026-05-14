@@ -11,23 +11,25 @@ import java.util.Locale;
 public class IncidentClassificationService {
 
     private static final List<String> CRITICAL_KEYWORDS = List.of(
-            "outage", "system down", "data leak", "breach", "ransomware", "production down"
+            "flood", "gas leak", "gas smell", "fire", "no heating",
+            "burst pipe", "sewage", "collapse", "electrocution"
     );
 
     private static final List<String> HIGH_KEYWORDS = List.of(
-            "security", "payment failed", "login", "authentication", "access denied",
-            "unauthorized", "data loss", "service unavailable", "downtime"
+            "leak", "broken lock", "boiler", "no hot water", "mould",
+            "unsafe", "electrical fault", "no power", "security",
+            "infestation", "not working"
     );
 
     private static final List<String> LOW_KEYWORDS = List.of(
-            "ui", "typo", "minor", "cosmetic", "question", "feature request",
-            "documentation", "suggestion"
+            "lightbulb", "minor", "question", "query", "information",
+            "bin", "cosmetic", "suggestion", "paint"
     );
 
     public Priority classify(String title, String description, IncidentCategory category) {
         String text = (title + " " + description).toLowerCase(Locale.ENGLISH);
 
-        if (category == IncidentCategory.SECURITY) {
+        if (category == IncidentCategory.SAFETY) {
             return Priority.HIGH;
         }
 

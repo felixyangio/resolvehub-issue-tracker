@@ -39,17 +39,22 @@ public class IncidentService {
     private final StatusTransitionValidator statusTransitionValidator;
     private final AuditLogRepository auditLogRepository;
     private final IncidentClassificationService classificationService;
+    private final CategoryClassificationService categoryClassificationService;
 
     @Transactional
     public IncidentResponse create(CreateIncidentRequest request, CustomUserDetails userDetails) {
         User creator = getUserOrThrow(userDetails.getUsername());
 
+        IncidentCategory resolvedCategory = request.getCategory() != null
+                ? request.getCategory()
+                : categoryClassificationService.classify(request.getTitle(), request.getDescription());
+
         Incident incident = Incident.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .category(request.getCategory())
+                .category(resolvedCategory)
                 .priority(request.getPriority() != null ? request.getPriority()
-                        : classificationService.classify(request.getTitle(), request.getDescription(), request.getCategory()))
+                        : classificationService.classify(request.getTitle(), request.getDescription(), resolvedCategory))
                 .status(IncidentStatus.NEW)
                 .createdBy(creator)
                 .dueAt(request.getDueAt())

@@ -1,9 +1,13 @@
 package com.resolvehub.enums;
 
 public enum IncidentCategory {
-    TECHNICAL,
+    MAINTENANCE,
+    SAFETY,
+    NOISE,
+    INTERNET,
     BILLING,
-    SECURITY,
-    HR,
-    GENERAL
+    DEPOSIT,
+    CLEANING,
+    ACCESS,
+    OTHER
 }

@@ -21,6 +21,8 @@ public class IncidentResponse {
     private final String createdByName;
     private final UUID assignedToId;
     private final String assignedToName;
+    private final String createdByRole;
+    private final String assignedToRole;
     private final LocalDateTime dueAt;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
@@ -37,6 +39,8 @@ public class IncidentResponse {
                 .createdByName(incident.getCreatedBy().getName())
                 .assignedToId(incident.getAssignedTo() != null ? incident.getAssignedTo().getId() : null)
                 .assignedToName(incident.getAssignedTo() != null ? incident.getAssignedTo().getName() : null)
+                .createdByRole(incident.getCreatedBy().getRole().name())
+                .assignedToRole(incident.getAssignedTo() != null ? incident.getAssignedTo().getRole().name() : null)
                 .dueAt(incident.getDueAt())
                 .createdAt(incident.getCreatedAt())
                 .updatedAt(incident.getUpdatedAt())
