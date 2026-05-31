@@ -17,6 +17,7 @@ import { PageLoader } from '@/components/shared/PageLoader';
 import { ErrorAlert } from '@/components/shared/ErrorAlert';
 import { MockBanner } from '@/components/shared/MockBanner';
 import { useApi, useMutation } from '@/hooks/useApi';
+import { ApiError } from '@/api/client';
 import { incidentApi, commentApi, auditLogApi, authApi } from '@/api/endpoints';
 import type { UserResponse } from '@/api/endpoints';
 import { mapIncident, mapComment, mapAuditLog } from '@/api/mappers';
@@ -24,11 +25,8 @@ import { incidents as mockIncidents, commentsForCase as mockComments, auditLogsF
 import { useAuth } from '@/contexts/AuthContext';
 import type { Incident, Comment as CommentType, AuditLog, IncidentStatus } from '@/types';
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('en-GB', {
-    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
-}
+import { formatDateTime } from '@/lib/utils';
+const formatDate = formatDateTime;
 
 const EMPTY_COMMENTS: CommentType[] = [];
 const EMPTY_AUDIT_LOGS: AuditLog[] = [];
@@ -168,8 +166,10 @@ export function CaseDetail() {
       refetchAuditLogs();
       setStatusSuccess(`Status updated to ${newStatus.replace('_', ' ')}`);
       setTimeout(() => setStatusSuccess(null), 3000);
-    } catch {
-      // Error is captured by useMutation and shown inline
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        refetchIncident(); // reload latest version
+      }
     }
   };
 
@@ -183,13 +183,15 @@ export function CaseDetail() {
       const agentName = agents?.find(a => a.id === agentId)?.name ?? 'agent';
       setAssignSuccess(`Assigned to ${agentName}`);
       setTimeout(() => setAssignSuccess(null), 3000);
-    } catch {
-      // Error is captured by useMutation and shown inline
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        refetchIncident();
+      }
     }
   };
 
   const handleAddComment = async () => {
-    if (!commentText.trim() || !id) return;
+    if (!commentText.trim() || !id || addComment.isLoading) return;
     try {
       await addComment.execute(commentText.trim());
       setCommentText('');
@@ -273,38 +275,44 @@ export function CaseDetail() {
 
                 <Separator />
 
-                <div className="space-y-3">
-                  <Textarea
-                    placeholder="Add a comment..."
-                    className="rounded-xl min-h-[80px] resize-none"
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    disabled={addComment.isLoading}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleAddComment();
-                      }
-                    }}
-                  />
-                  {addComment.error && (
-                    <p className="text-xs text-red-600">{addComment.error}</p>
-                  )}
-                  <div className="flex justify-end">
-                    <Button
-                      className="rounded-xl"
-                      onClick={handleAddComment}
-                      disabled={!commentText.trim() || addComment.isLoading}
-                    >
-                      {addComment.isLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="mr-2 h-4 w-4" />
-                      )}
-                      Send
-                    </Button>
+                {isFinalStatus ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Comments are disabled on {incident.status.toLowerCase()} cases.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    <Textarea
+                      placeholder="Add a comment..."
+                      className="rounded-xl min-h-[80px] resize-none"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      disabled={addComment.isLoading}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleAddComment();
+                        }
+                      }}
+                    />
+                    {addComment.error && (
+                      <p className="text-xs text-red-600">{addComment.error}</p>
+                    )}
+                    <div className="flex justify-end">
+                      <Button
+                        className="rounded-xl"
+                        onClick={handleAddComment}
+                        disabled={!commentText.trim() || addComment.isLoading}
+                      >
+                        {addComment.isLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="mr-2 h-4 w-4" />
+                        )}
+                        Send
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </TabsContent>
 
               <TabsContent value="timeline">

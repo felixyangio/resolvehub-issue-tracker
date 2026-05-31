@@ -8,9 +8,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +22,16 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "incidents")
+@Table(name = "incidents", indexes = {
+    @Index(name = "idx_incident_status", columnList = "status"),
+    @Index(name = "idx_incident_priority", columnList = "priority"),
+    @Index(name = "idx_incident_category", columnList = "category"),
+    @Index(name = "idx_incident_created_by", columnList = "created_by"),
+    @Index(name = "idx_incident_assigned_to", columnList = "assigned_to"),
+    @Index(name = "idx_incident_created_by_status", columnList = "created_by, status"),
+    @Index(name = "idx_incident_assigned_to_status", columnList = "assigned_to, status"),
+    @Index(name = "idx_incident_created_at", columnList = "created_at"),
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -55,4 +66,8 @@ public class Incident extends BaseEntity {
     private User assignedTo;
 
     private LocalDateTime dueAt;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 }

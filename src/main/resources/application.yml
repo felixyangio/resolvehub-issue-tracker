@@ -11,6 +11,18 @@ spring:
     password: ${DB_PASSWORD:resolvehub}
     driver-class-name: org.postgresql.Driver
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: "0"
+    locations: classpath:db/migration
+
   jpa:
     hibernate:
       ddl-auto: validate
@@ -28,3 +40,7 @@ app:
   jwt:
     secret: ${JWT_SECRET:Y2hhbmdlLXRoaXMtaW4tcHJvZHVjdGlvbi10by1hLXNlY3VyZS1yYW5kb20ta2V5LTI1Ng==}
     expiration-ms: 86400000
+  rate-limit:
+    login:
+      max-attempts: ${RATE_LIMIT_LOGIN_MAX:5}
+      window-seconds: ${RATE_LIMIT_LOGIN_WINDOW:300}

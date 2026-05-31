@@ -17,6 +17,8 @@ import { ErrorAlert } from '@/components/shared/ErrorAlert';
 import { MockBanner } from '@/components/shared/MockBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApi } from '@/hooks/useApi';
+import { STATUS_LABELS } from '@/lib/constants';
+import { formatRelativeTime } from '@/lib/utils';
 import { dashboardApi, incidentApi, type WeeklyTrendResponse } from '@/api/endpoints';
 import { mapDashboardSummary, mapIncident } from '@/api/mappers';
 import {
@@ -31,16 +33,6 @@ import type { DashboardSummary, StatusCount, PriorityCount, CategoryCount, Incid
 
 const pieColors = ['#6366f1', '#f59e0b', '#8b5cf6', '#10b981', '#94a3b8', '#ef4444'];
 const categoryColors = ['#6366f1', '#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#06b6d4', '#ec4899', '#94a3b8'];
-
-function formatTime(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = now.getTime() - d.getTime();
-  const hours = Math.floor(diff / 3600000);
-  if (hours < 1) return 'Just now';
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -219,7 +211,7 @@ export function Dashboard() {
             {safeStatusCounts.map((s, i) => (
               <div key={s.status} className="flex items-center gap-2 text-xs">
                 <div className="h-2 w-2 rounded-full" style={{ backgroundColor: pieColors[i % pieColors.length] }} />
-                <span className="text-muted-foreground">{s.status.replace('_', ' ')}</span>
+                <span className="text-muted-foreground">{STATUS_LABELS[s.status] ?? s.status}</span>
                 <span className="ml-auto font-medium">{s.count}</span>
               </div>
             ))}
@@ -304,7 +296,7 @@ export function Dashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs leading-snug truncate">{inc.title}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{inc.createdBy.name} · {formatTime(inc.updatedAt)}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{inc.createdBy.name} · {formatRelativeTime(inc.updatedAt)}</p>
                 </div>
               </Link>
             ))}

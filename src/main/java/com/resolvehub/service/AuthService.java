@@ -24,6 +24,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final LoginRateLimiter loginRateLimiter;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -50,6 +51,9 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        // Rate limit: block brute-force attempts (Redis sliding window)
+        loginRateLimiter.checkRateLimit(request.getEmail());
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -60,6 +64,9 @@ public class AuthService {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadRequestException("Invalid email or password"));
+
+        // Successful login — clear the rate-limit counter
+        loginRateLimiter.resetCounter(request.getEmail());
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
 

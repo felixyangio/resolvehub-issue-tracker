@@ -16,6 +16,7 @@ import { incidentApi } from '@/api/endpoints';
 import type { Page } from '@/api/endpoints';
 import { mapIncident } from '@/api/mappers';
 import { incidents as mockIncidents } from '@/data/mock';
+import { formatShortDate } from '@/lib/utils';
 import type { Incident, IncidentStatus } from '@/types';
 
 const PAGE_SIZE = 20;
@@ -28,10 +29,6 @@ const statusFilters: { value: IncidentStatus | 'ALL'; label: string }[] = [
   { value: 'CLOSED', label: 'Closed' },
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-}
 
 export function CaseList() {
   const [search, setSearch] = useState('');
@@ -177,14 +174,14 @@ export function CaseList() {
                     </div>
                     <p className="text-sm font-medium truncate mt-0.5">{incident.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5 md:hidden">
-                      {incident.createdBy.name} · {formatDate(incident.createdAt)}
+                      {incident.createdBy.name} · {formatShortDate(incident.createdAt)}
                     </p>
                   </div>
                   <div className="hidden md:block"><CategoryBadge category={incident.category} /></div>
                   <div className="hidden md:block"><UrgencyBadge priority={incident.priority} /></div>
                   <div className="hidden md:block"><StatusBadge status={incident.status} /></div>
                   <div className="hidden md:block">
-                    <p className="text-xs text-muted-foreground">{formatDate(incident.createdAt)}</p>
+                    <p className="text-xs text-muted-foreground">{formatShortDate(incident.createdAt)}</p>
                     <p className="text-xs text-muted-foreground/60">{incident.createdBy.name}</p>
                   </div>
                   <div className="hidden md:flex justify-end">

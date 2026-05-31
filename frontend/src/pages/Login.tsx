@@ -26,7 +26,11 @@ export function Login() {
       navigate(from, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
-        setError('Invalid email or password. Please try again.');
+        if (err.status === 429) {
+          setError(err.message || 'Too many login attempts. Please wait a few minutes and try again.');
+        } else {
+          setError('Invalid email or password. Please try again.');
+        }
       } else {
         setError('Cannot reach the server. Please check the backend is running, or use a demo account below.');
       }

@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { ROLE_LABELS } from '@/lib/constants';
 
 const pageTitles: Record<string, string> = {
@@ -21,10 +21,6 @@ const mobileNav = [
   { to: '/cases/new', icon: PlusCircle, label: 'New Case' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
-
-function getInitials(name: string) {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase();
-}
 
 export function TopNav() {
   const location = useLocation();
@@ -43,7 +39,7 @@ export function TopNav() {
         <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" title="Notifications (coming soon)" disabled className="opacity-50">
             <Bell className="h-4 w-4" />
           </Button>
           <Link to="/settings">

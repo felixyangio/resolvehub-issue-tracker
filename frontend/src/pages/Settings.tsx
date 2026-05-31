@@ -6,12 +6,9 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROLE_LABELS } from '@/lib/constants';
+import { getInitials } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import { Shield, LogOut, Sun, Moon, Monitor } from 'lucide-react';
-
-function getInitials(name: string) {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase();
-}
 
 const themeOptions = [
   { value: 'light' as const, label: 'Light', icon: Sun },

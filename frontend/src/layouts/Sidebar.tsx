@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ClipboardList, PlusCircle,
   Settings, LogOut, Building2,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { ROLE_LABELS } from '@/lib/constants';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -15,10 +15,6 @@ const navItems = [
   { to: '/cases/new', icon: PlusCircle, label: 'New Case' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
-
-function getInitials(name: string) {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase();
-}
 
 export function Sidebar() {
   const { user, logout } = useAuth();
