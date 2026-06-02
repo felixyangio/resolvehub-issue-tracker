@@ -78,4 +78,12 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID>, JpaSp
 
     @Query("SELECT COUNT(i) FROM Incident i WHERE i.status IN (com.resolvehub.enums.IncidentStatus.RESOLVED, com.resolvehub.enums.IncidentStatus.CLOSED) AND i.updatedAt >= :start AND i.updatedAt < :end")
     long countResolvedBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // SLA breach detection — active cases past their due date
+    @EntityGraph(attributePaths = {"createdBy", "assignedTo"})
+    @Query("SELECT i FROM Incident i WHERE i.dueAt IS NOT NULL AND i.dueAt < :now " +
+           "AND i.status IN (com.resolvehub.enums.IncidentStatus.NEW, " +
+           "com.resolvehub.enums.IncidentStatus.ASSIGNED, " +
+           "com.resolvehub.enums.IncidentStatus.IN_PROGRESS)")
+    List<Incident> findOverdueIncidents(@Param("now") LocalDateTime now);
 }

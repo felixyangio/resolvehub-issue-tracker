@@ -38,3 +38,6 @@ Thumbs.db
 
 ### Env ###
 .env
+
+### Uploads ###
+uploads/

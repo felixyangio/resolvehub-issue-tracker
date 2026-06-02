@@ -21,7 +21,9 @@ import com.resolvehub.repository.IncidentRepository;
 import com.resolvehub.repository.IncidentSpecification;
 import com.resolvehub.repository.UserRepository;
 import com.resolvehub.security.CustomUserDetails;
+import com.resolvehub.event.IncidentEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -40,6 +42,7 @@ public class IncidentService {
     private final AuditLogRepository auditLogRepository;
     private final IncidentClassificationService classificationService;
     private final CategoryClassificationService categoryClassificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public IncidentResponse create(CreateIncidentRequest request, CustomUserDetails userDetails) {
@@ -158,6 +161,13 @@ public class IncidentService {
         logAudit(updated, actor, AuditAction.INCIDENT_ASSIGNED,
                 oldAgentName, agent.getName(), "Assigned to " + agent.getName());
 
+        // Notify the assigned agent via email (async)
+        eventPublisher.publishEvent(new IncidentEvent(
+                this, IncidentEvent.Type.ASSIGNED,
+                updated.getId(), updated.getTitle(),
+                agent.getEmail(), agent.getName(),
+                actor.getName()));
+
         return IncidentResponse.fromEntity(updated);
     }
 
@@ -178,6 +188,13 @@ public class IncidentService {
         logAudit(updated, actor, AuditAction.STATUS_CHANGED,
                 oldStatus.name(), request.getStatus().name(),
                 "Status changed from " + oldStatus + " to " + request.getStatus());
+
+        // Notify case creator about status change (async)
+        eventPublisher.publishEvent(new IncidentEvent(
+                this, IncidentEvent.Type.STATUS_CHANGED,
+                updated.getId(), updated.getTitle(),
+                updated.getCreatedBy().getEmail(), updated.getCreatedBy().getName(),
+                oldStatus + " → " + request.getStatus()));
 
         return IncidentResponse.fromEntity(updated);
     }

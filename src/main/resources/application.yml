@@ -17,6 +17,17 @@ spring:
       port: ${REDIS_PORT:6379}
       timeout: 2000ms
 
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
+
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -33,6 +44,11 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+
 server:
   port: 8080
 
@@ -40,6 +56,12 @@ app:
   jwt:
     secret: ${JWT_SECRET:Y2hhbmdlLXRoaXMtaW4tcHJvZHVjdGlvbi10by1hLXNlY3VyZS1yYW5kb20ta2V5LTI1Ng==}
     expiration-ms: 86400000
+  mail:
+    from: ${MAIL_FROM:noreply@resolvehub.io}
+  base-url: ${APP_BASE_URL:http://localhost:5173}
+  upload:
+    dir: ${UPLOAD_DIR:./uploads}
+    max-size-mb: 5
   rate-limit:
     login:
       max-attempts: ${RATE_LIMIT_LOGIN_MAX:5}
