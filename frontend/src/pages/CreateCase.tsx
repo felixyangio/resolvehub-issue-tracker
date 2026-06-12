@@ -39,7 +39,7 @@ export function CreateCase() {
   const [priority, setPriority] = useState<string>('');
 
   const createCase = useMutation(
-    async (data: { title: string; description: string; category: IncidentCategory; priority?: Priority }) => {
+    async (data: { title: string; description: string; category?: IncidentCategory; priority?: Priority }) => {
       return incidentApi.create(data);
     },
   );
