@@ -79,10 +79,25 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(allowedOrigins.split(",")));
+
+        // Allow configured origins plus common deployment patterns
+        // setAllowedOriginPatterns supports wildcard with credentials
+        List<String> patterns = new java.util.ArrayList<>();
+        patterns.add("http://localhost:*");
+        patterns.add("https://*.vercel.app");
+        patterns.add("https://*.up.railway.app");
+        // Also include any explicitly configured origins
+        for (String origin : allowedOrigins.split(",")) {
+            String trimmed = origin.trim();
+            if (!trimmed.isEmpty()) patterns.add(trimmed);
+        }
+        configuration.setAllowedOriginPatterns(patterns);
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
