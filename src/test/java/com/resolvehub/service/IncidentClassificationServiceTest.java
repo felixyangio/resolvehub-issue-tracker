@@ -21,8 +21,16 @@ class IncidentClassificationServiceTest {
     }
 
     @Test
-    void safetyCategoryTakesPrecedenceOverCriticalKeywords() {
+    void safetyWithGasLeakKeywordIsCritical() {
+        // Gas leak matches CRITICAL_KEYWORDS — always escalates to CRITICAL regardless of category
         Priority result = service.classify("Gas leak in kitchen", "Strong smell of gas", IncidentCategory.SAFETY);
+        assertEquals(Priority.CRITICAL, result);
+    }
+
+    @Test
+    void safetyCategoryWithoutCriticalKeywordsIsHigh() {
+        // SAFETY category without critical keywords defaults to HIGH
+        Priority result = service.classify("Broken window latch", "Window does not lock properly", IncidentCategory.SAFETY);
         assertEquals(Priority.HIGH, result);
     }
 

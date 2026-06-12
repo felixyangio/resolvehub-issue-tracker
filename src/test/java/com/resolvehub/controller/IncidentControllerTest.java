@@ -21,6 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import com.resolvehub.service.AttachmentService;
+import com.resolvehub.service.ExportService;
 import com.resolvehub.security.CustomUserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -49,6 +51,9 @@ class IncidentControllerTest {
 
     @MockBean
     private IncidentService incidentService;
+
+    @MockBean
+    private ExportService exportService;
 
     @MockBean
     private JwtService jwtService;

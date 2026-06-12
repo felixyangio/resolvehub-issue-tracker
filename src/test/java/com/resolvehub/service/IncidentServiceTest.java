@@ -62,6 +62,9 @@ class IncidentServiceTest {
     @Mock
     private CategoryClassificationService categoryClassificationService;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private IncidentService incidentService;
 
