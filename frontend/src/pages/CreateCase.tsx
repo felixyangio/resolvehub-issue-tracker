@@ -49,12 +49,13 @@ export function CreateCase() {
     if (!title.trim() || !description.trim() || createCase.isLoading) return;
 
     try {
-      const result = await createCase.execute({
+      const payload: { title: string; description: string; category?: IncidentCategory; priority?: Priority } = {
         title: title.trim(),
         description: description.trim(),
-        ...(category ? { category: category as IncidentCategory } : {}),
-        ...(priority ? { priority: priority as Priority } : {}),
-      });
+      };
+      if (category) payload.category = category as IncidentCategory;
+      if (priority) payload.priority = priority as Priority;
+      const result = await createCase.execute(payload);
       navigate(`/cases/${result.id}`);
     } catch {
       // Error is already captured by useMutation and shown via createCase.error

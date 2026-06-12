@@ -392,7 +392,7 @@ export function CaseDetail() {
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Change Status</p>
                   <Select
-                    onValueChange={handleStatusChange}
+                    onValueChange={(v: string) => handleStatusChange(v)}
                     disabled={changeStatus.isLoading}
                   >
                     <SelectTrigger className="rounded-xl h-10">
@@ -420,7 +420,7 @@ export function CaseDetail() {
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Assign Staff</p>
                   <Select
-                    onValueChange={handleAssign}
+                    onValueChange={(v: string) => handleAssign(v)}
                     disabled={assignAgent.isLoading}
                     value=""
                   >
