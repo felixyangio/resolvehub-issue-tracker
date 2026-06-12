@@ -1,0 +1,42 @@
+# Production profile — all sensitive values come from environment variables
+# Set SPRING_PROFILES_ACTIVE=prod to activate
+
+spring:
+  # Railway provides DATABASE_URL as a full JDBC URL
+  datasource:
+    url: ${DATABASE_URL}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5          # keep low on free tier
+      connection-timeout: 30000
+
+  data:
+    redis:
+      url: ${REDIS_URL}             # Railway Redis provides REDIS_URL
+      timeout: 2000ms
+
+  jpa:
+    hibernate:
+      ddl-auto: validate            # Flyway owns schema in prod
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: "0"
+
+  # Mail is optional — app works without it (notifications silently skipped)
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    test-connection: false
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
+
+server:
+  port: ${PORT:8080}                # Railway injects $PORT automatically

@@ -1,7 +1,7 @@
 package com.resolvehub.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,15 +16,20 @@ import java.util.UUID;
  * has its own template method for clarity and easy future extension to
  * HTML templates (e.g. via Thymeleaf).</p>
  *
+ * <p>The {@link JavaMailSender} dependency is {@code required = false} so
+ * the application starts cleanly when no SMTP credentials are configured
+ * (e.g. demo/dev environments). Notifications are silently skipped.</p>
+ *
  * <p>All methods are designed to be called asynchronously from
  * {@link com.resolvehub.event.IncidentEventListener}.</p>
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class NotificationService {
 
-    private final JavaMailSender mailSender;
+    /** Optional — app starts without mail config; notifications are silently skipped */
+    @Autowired(required = false)
+    private JavaMailSender mailSender;
 
     @Value("${app.mail.from:noreply@resolvehub.io}")
     private String fromAddress;
@@ -106,6 +111,10 @@ public class NotificationService {
     }
 
     private void send(String to, String subject, String body) {
+        if (mailSender == null) {
+            log.info("[Mail not configured] Would send to {}: {}", to, subject);
+            return;
+        }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromAddress);
