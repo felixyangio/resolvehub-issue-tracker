@@ -1,10 +1,18 @@
-# Production profile
-# Railway automatically injects PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
-# from the linked Postgres service — no manual DATABASE_URL needed.
+# Production profile — activated by SPRING_PROFILES_ACTIVE=prod
+#
+# Railway variable setup (do this once in Railway Variables → Raw Editor):
+#
+#   PGHOST=${{Postgres.PGHOST}}
+#   PGPORT=${{Postgres.PGPORT}}
+#   PGDATABASE=${{Postgres.PGDATABASE}}
+#   PGUSER=${{Postgres.PGUSER}}
+#   PGPASSWORD=${{Postgres.PGPASSWORD}}
+#   REDISHOST=${{Redis.REDISHOST}}
+#   REDISPORT=${{Redis.REDISPORT}}
+#   REDISPASSWORD=${{Redis.REDISPASSWORD}}
 
 spring:
   datasource:
-    # Use individual PG* variables (always injected by Railway — no format ambiguity)
     url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
     username: ${PGUSER}
     password: ${PGPASSWORD}
@@ -15,8 +23,7 @@ spring:
 
   data:
     redis:
-      # Railway injects REDISHOST, REDISPORT, REDISPASSWORD from linked Redis service
-      host: ${REDISHOST}
+      host: ${REDISHOST:localhost}
       port: ${REDISPORT:6379}
       password: ${REDISPASSWORD:}
       timeout: 2000ms
@@ -31,7 +38,6 @@ spring:
     baseline-on-migrate: true
     baseline-version: "0"
 
-  # Disable mail autoconfiguration — app works without SMTP config
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
 
