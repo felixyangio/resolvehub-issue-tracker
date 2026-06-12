@@ -2,22 +2,24 @@
 # Set SPRING_PROFILES_ACTIVE=prod to activate
 
 spring:
-  # Railway provides DATABASE_URL as a full JDBC URL
+  # Railway DATABASE_URL format: postgresql://user:pass@host:port/db
+  # We prepend "jdbc:" to make it a valid JDBC URL for HikariCP
   datasource:
-    url: ${DATABASE_URL}
+    url: jdbc:${DATABASE_URL}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 5          # keep low on free tier
+      maximum-pool-size: 5
       connection-timeout: 30000
 
   data:
     redis:
-      url: ${REDIS_URL}             # Railway Redis provides REDIS_URL
+      # Railway REDIS_URL format: redis://default:pass@host:port
+      url: ${REDIS_URL}
       timeout: 2000ms
 
   jpa:
     hibernate:
-      ddl-auto: validate            # Flyway owns schema in prod
+      ddl-auto: validate
     show-sql: false
 
   flyway:
@@ -25,18 +27,9 @@ spring:
     baseline-on-migrate: true
     baseline-version: "0"
 
-  # Mail is optional — app works without it (notifications silently skipped)
-  mail:
-    host: ${MAIL_HOST:}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    test-connection: false
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls.enable: true
+  # Mail is completely disabled unless MAIL_HOST is explicitly provided
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
 
 server:
-  port: ${PORT:8080}                # Railway injects $PORT automatically
+  port: ${PORT:8080}
