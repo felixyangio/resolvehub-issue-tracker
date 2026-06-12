@@ -1,11 +1,13 @@
-# Production profile — all sensitive values come from environment variables
-# Set SPRING_PROFILES_ACTIVE=prod to activate
+# Production profile
+# Railway automatically injects PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
+# from the linked Postgres service — no manual DATABASE_URL needed.
 
 spring:
-  # Railway DATABASE_URL format: postgresql://user:pass@host:port/db
-  # We prepend "jdbc:" to make it a valid JDBC URL for HikariCP
   datasource:
-    url: jdbc:${DATABASE_URL}
+    # Use individual PG* variables (always injected by Railway — no format ambiguity)
+    url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
+    username: ${PGUSER}
+    password: ${PGPASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
@@ -13,8 +15,10 @@ spring:
 
   data:
     redis:
-      # Railway REDIS_URL format: redis://default:pass@host:port
-      url: ${REDIS_URL}
+      # Railway injects REDISHOST, REDISPORT, REDISPASSWORD from linked Redis service
+      host: ${REDISHOST}
+      port: ${REDISPORT:6379}
+      password: ${REDISPASSWORD:}
       timeout: 2000ms
 
   jpa:
@@ -27,7 +31,7 @@ spring:
     baseline-on-migrate: true
     baseline-version: "0"
 
-  # Mail is completely disabled unless MAIL_HOST is explicitly provided
+  # Disable mail autoconfiguration — app works without SMTP config
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
 
