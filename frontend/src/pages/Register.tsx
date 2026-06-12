@@ -25,8 +25,8 @@ export function Register() {
       setError('Passwords do not match.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
       return;
     }
 
@@ -36,7 +36,15 @@ export function Register() {
       navigate('/login', { state: { registered: true } });
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message);
+        if (err.status === 409) {
+          setError('An account with this email already exists. Please sign in instead.');
+        } else if (err.errors && Object.keys(err.errors).length > 0) {
+          // Show the first field-level validation error from the backend
+          const firstError = Object.values(err.errors)[0];
+          setError(firstError);
+        } else {
+          setError(err.message || 'Registration failed. Please try again.');
+        }
       } else {
         setError('Cannot reach the server. Please try again later.');
       }
@@ -128,11 +136,11 @@ export function Register() {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 className="h-11 rounded-xl"
                 disabled={isLoading}
                 required
-                minLength={6}
+                minLength={8}
               />
             </div>
             <div className="space-y-2">
@@ -146,7 +154,7 @@ export function Register() {
                 className="h-11 rounded-xl"
                 disabled={isLoading}
                 required
-                minLength={6}
+                minLength={8}
               />
             </div>
             <Button type="submit" className="w-full h-11 rounded-xl" disabled={isLoading}>
