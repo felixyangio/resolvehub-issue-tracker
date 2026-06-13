@@ -1,6 +1,6 @@
 import { useLocation, useNavigate, Link, NavLink } from 'react-router-dom';
 import { useState } from 'react';
-import { Bell, Menu, Building2, LayoutDashboard, ClipboardList, PlusCircle, Settings, X, LogOut } from 'lucide-react';
+import { Bell, Menu, Building2, LayoutDashboard, ClipboardList, PlusCircle, Settings, X, LogOut, Users } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ const pageTitles: Record<string, string> = {
   '/cases': 'Cases',
   '/cases/new': 'New Case',
   '/settings': 'Settings',
+  '/admin/users': 'User Management',
 };
 
 const mobileNav = [
@@ -28,6 +29,7 @@ export function TopNav() {
   const { user, logout } = useAuth();
   const title = pageTitles[location.pathname] || (location.pathname.startsWith('/cases/') ? 'Case Detail' : 'ResolveHub');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <>
@@ -83,6 +85,26 @@ export function TopNav() {
                   {item.label}
                 </NavLink>
               ))}
+              {isAdmin && (
+                <>
+                  <div className="pt-2 pb-1 px-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Admin</p>
+                  </div>
+                  <NavLink
+                    to="/admin/users"
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+                        isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'
+                      )
+                    }
+                  >
+                    <Users className="h-4 w-4" />
+                    Users
+                  </NavLink>
+                </>
+              )}
             </nav>
             <Separator />
             <div className="p-4">

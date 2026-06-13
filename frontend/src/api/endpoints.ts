@@ -160,6 +160,22 @@ export const auditLogApi = {
     api.get<AuditLogResponse[]>(`/incidents/${incidentId}/audit-logs`),
 };
 
+// --- Admin ---
+
+export const adminApi = {
+  listUsers: (page = 0, size = 20) =>
+    api.get<Page<UserResponse>>(`/admin/users?page=${page}&size=${size}&sort=createdAt,desc`),
+
+  createUser: (data: { name: string; email: string; password: string; role: string }) =>
+    api.post<UserResponse>('/admin/users', data),
+
+  updateUser: (id: string, data: { role?: string; enabled?: boolean }) =>
+    api.patch<UserResponse>(`/admin/users/${id}`, data),
+
+  deleteUser: (id: string) =>
+    api.delete<void>(`/admin/users/${id}`),
+};
+
 // --- Dashboard ---
 
 export interface CategoryCountResponse {

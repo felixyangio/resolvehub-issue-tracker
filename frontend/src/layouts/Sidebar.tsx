@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ClipboardList, PlusCircle,
-  Settings, LogOut, Building2,
+  Settings, LogOut, Building2, Users,
 } from 'lucide-react';
 import { cn, getInitials } from '@/lib/utils';
 import { ROLE_LABELS } from '@/lib/constants';
@@ -19,6 +19,7 @@ const navItems = [
 export function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isAdmin = user?.role === 'ADMIN';
 
   const handleLogout = () => {
     logout();
@@ -57,6 +58,30 @@ export function Sidebar() {
             {item.label}
           </NavLink>
         ))}
+
+        {isAdmin && (
+          <>
+            <div className="pt-2 pb-1 px-3">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                Admin
+              </p>
+            </div>
+            <NavLink
+              to="/admin/users"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                )
+              }
+            >
+              <Users className="h-4 w-4" />
+              Users
+            </NavLink>
+          </>
+        )}
       </nav>
 
       <Separator />
