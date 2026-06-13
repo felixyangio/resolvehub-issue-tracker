@@ -22,6 +22,7 @@ export interface UserResponse {
 
 export interface IncidentResponse {
   id: string;
+  caseNumber: number;
   title: string;
   description: string;
   category: string;

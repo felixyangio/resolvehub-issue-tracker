@@ -29,12 +29,12 @@ public class IncidentClassificationService {
     public Priority classify(String title, String description, IncidentCategory category) {
         String text = (title + " " + description).toLowerCase(Locale.ENGLISH);
 
-        if (category == IncidentCategory.SAFETY) {
-            return Priority.HIGH;
-        }
-
         if (containsAny(text, CRITICAL_KEYWORDS)) {
             return Priority.CRITICAL;
+        }
+
+        if (category == IncidentCategory.SAFETY) {
+            return Priority.HIGH;
         }
 
         if (containsAny(text, HIGH_KEYWORDS)) {

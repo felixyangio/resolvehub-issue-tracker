@@ -38,6 +38,7 @@ public class CommentService {
                 .content(request.getContent())
                 .incident(incident)
                 .author(author)
+                .authorRole(author.getRole().name())
                 .build();
 
         Comment saved = commentRepository.save(comment);

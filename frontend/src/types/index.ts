@@ -32,6 +32,7 @@ export interface User {
 
 export interface Incident {
   id: string;
+  caseNumber: number;
   title: string;
   description: string;
   category: IncidentCategory;

@@ -79,6 +79,7 @@ export function CaseList() {
       list = list.filter(
         (i) =>
           i.title.toLowerCase().includes(q) ||
+          String(i.caseNumber).includes(q) ||
           i.id.toLowerCase().includes(q) ||
           i.createdBy.name.toLowerCase().includes(q),
       );
@@ -170,7 +171,7 @@ export function CaseList() {
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground">{incident.id}</span>
+                      <span className="text-xs font-mono text-muted-foreground">#{incident.caseNumber}</span>
                     </div>
                     <p className="text-sm font-medium truncate mt-0.5">{incident.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5 md:hidden">

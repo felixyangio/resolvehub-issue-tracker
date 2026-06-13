@@ -61,6 +61,7 @@ public class IncidentService {
                 .status(IncidentStatus.NEW)
                 .createdBy(creator)
                 .dueAt(request.getDueAt())
+                .caseNumber(incidentRepository.nextCaseNumber())
                 .build();
 
         Incident saved = incidentRepository.save(incident);

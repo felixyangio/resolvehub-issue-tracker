@@ -75,8 +75,8 @@ export function Settings() {
               <p className="text-sm font-medium">{ROLE_LABELS[user.role] ?? user.role}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Account ID</p>
-              <p className="text-sm font-mono text-muted-foreground">{user.id}</p>
+              <p className="text-xs text-muted-foreground">Member ID</p>
+              <p className="text-sm font-mono text-muted-foreground">MBR-{user.id.slice(0, 8).toUpperCase()}</p>
             </div>
           </div>
         </div>

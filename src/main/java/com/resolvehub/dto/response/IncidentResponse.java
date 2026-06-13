@@ -12,6 +12,7 @@ import java.util.UUID;
 public class IncidentResponse {
 
     private final UUID id;
+    private final Long caseNumber;
     private final String title;
     private final String description;
     private final String category;
@@ -30,6 +31,7 @@ public class IncidentResponse {
     public static IncidentResponse fromEntity(Incident incident) {
         return IncidentResponse.builder()
                 .id(incident.getId())
+                .caseNumber(incident.getCaseNumber())
                 .title(incident.getTitle())
                 .description(incident.getDescription())
                 .category(incident.getCategory().name())

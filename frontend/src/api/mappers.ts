@@ -22,6 +22,7 @@ import type {
 export function mapIncident(r: IncidentResponse): Incident {
   return {
     id: r.id,
+    caseNumber: r.caseNumber,
     title: r.title,
     description: r.description,
     category: r.category as IncidentCategory,

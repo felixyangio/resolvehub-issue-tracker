@@ -232,7 +232,7 @@ export function CaseDetail() {
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <div className="flex flex-wrap items-start gap-3">
-          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded-lg">{incident.id}</span>
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded-lg">#{incident.caseNumber}</span>
           <StatusBadge status={incident.status} />
           <UrgencyBadge priority={incident.priority} />
           <CategoryBadge category={incident.category} />

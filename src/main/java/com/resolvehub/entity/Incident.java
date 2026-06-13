@@ -67,6 +67,9 @@ public class Incident extends BaseEntity {
 
     private LocalDateTime dueAt;
 
+    @Column(name = "case_number", nullable = false, unique = true, updatable = false)
+    private Long caseNumber;
+
     @Version
     @Column(nullable = false)
     private Long version;

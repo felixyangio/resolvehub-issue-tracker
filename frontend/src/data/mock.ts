@@ -27,6 +27,7 @@ export const currentUser: User = users[2]; // Carol Perry, Manager
 export const incidents: Incident[] = [
   {
     id: 'INC-001',
+    caseNumber: 1,
     title: 'Heating not working in Flat B204',
     description: 'Radiators are cold in all rooms. Thermostat shows no response. Temperature dropping rapidly. Resident reports it has been off since last night.',
     category: 'MAINTENANCE',
@@ -39,6 +40,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-002',
+    caseNumber: 2,
     title: 'Water leak under bathroom sink',
     description: 'Constant dripping from pipe joint under sink. Water pooling on floor tiles. Have placed a bucket but it fills within hours.',
     category: 'MAINTENANCE',
@@ -51,6 +53,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-003',
+    caseNumber: 3,
     title: 'Broken front door lock',
     description: 'Key turns but deadbolt does not engage. Door cannot be locked securely. This is the main entrance to the building.',
     category: 'SAFETY',
@@ -63,6 +66,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-004',
+    caseNumber: 4,
     title: 'Noise complaint after midnight',
     description: 'Loud music from Flat C305 between 1am and 3am, three nights running. Other residents on floor 3 also affected.',
     category: 'NOISE',
@@ -74,6 +78,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-005',
+    caseNumber: 5,
     title: 'Wi-Fi unavailable in Room C312',
     description: 'No wireless signal detected since yesterday evening. Router light is off. Other rooms on same floor also appear to be affected.',
     category: 'INTERNET',
@@ -86,6 +91,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-006',
+    caseNumber: 6,
     title: 'Deposit deduction dispute',
     description: 'Charged £150 for carpet cleaning but carpet was professionally cleaned before checkout. Have receipt as evidence.',
     category: 'DEPOSIT',
@@ -97,6 +103,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-007',
+    caseNumber: 7,
     title: 'Mould appearing near bedroom window',
     description: 'Black mould patches spreading on wall beside window frame. Getting worse each week. Affecting air quality.',
     category: 'MAINTENANCE',
@@ -109,6 +116,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-008',
+    caseNumber: 8,
     title: 'Washing machine broken in shared laundry',
     description: 'Machine stops mid-cycle with error code E3. Clothes stuck inside. Multiple residents affected.',
     category: 'MAINTENANCE',
@@ -121,6 +129,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-009',
+    caseNumber: 9,
     title: 'Communal hallway dirty',
     description: 'Ground floor hallway has not been cleaned for over two weeks. Visible dirt and scuff marks throughout.',
     category: 'CLEANING',
@@ -133,6 +142,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-010',
+    caseNumber: 10,
     title: 'Key fob not working for gym access',
     description: 'Key fob stopped working for the building gym. Tried multiple times at different readers. Other doors work fine.',
     category: 'ACCESS',
@@ -144,6 +154,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-011',
+    caseNumber: 11,
     title: 'Electricity bill discrepancy',
     description: 'January electricity charge is 3x higher than last month despite no change in usage patterns. Requesting review.',
     category: 'BILLING',
@@ -155,6 +166,7 @@ export const incidents: Incident[] = [
   },
   {
     id: 'INC-012',
+    caseNumber: 12,
     title: 'Fire alarm testing notification',
     description: 'Request for advance notice before scheduled fire alarm testing. Previous test was unannounced and caused disruption.',
     category: 'SAFETY',
